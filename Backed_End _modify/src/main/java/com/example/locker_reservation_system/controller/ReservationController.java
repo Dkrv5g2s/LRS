@@ -2,9 +2,9 @@ package com.example.locker_reservation_system.controller;
 
 import com.example.locker_reservation_system.dto.LockerStatusResponse;
 import com.example.locker_reservation_system.dto.ReservationRequest;
-import com.example.locker_reservation_system.entity.Reservation;
-import com.example.locker_reservation_system.service.LockerService;
-import com.example.locker_reservation_system.service.ReservationService;
+import com.example.locker_reservation_system.entity.Locker;
+import com.example.locker_reservation_system.service.LockerList;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -16,28 +16,27 @@ import java.util.List;
 @RequestMapping("/api/reservation")
 public class ReservationController {
 
-    @Autowired
-    private ReservationService reservationService;
+
 
     @Autowired
-    private LockerService lockerService;
+    private LockerList lockerList;
 
     @GetMapping("/status")
-    public List<LockerStatusResponse> getLockerReservationStatus(
+    public List<Locker> getLockerReservationStatus(
             @RequestParam("startDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
             @RequestParam("endDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
-        return lockerService.getLockerStatusByDateRange(startDate, endDate);
+        return lockerList.getLockers();
     }
-
-    @PostMapping
-    public Reservation reserve(@RequestBody ReservationRequest request) {
-        return reservationService.reserve(request);
-    }
-
-    @GetMapping("/user/{userId}")
-    public List<Reservation> getReservationsByUserId(@PathVariable Long userId) {
-        return reservationService.getReservationsByUserId(userId);
-    }
+//
+//    @PostMapping
+//    public Reservation reserve(@RequestBody ReservationRequest request) {
+//        return reservationService.reserve(request);
+//    }
+//
+//    @GetMapping("/user/{userId}")
+//    public List<Reservation> getReservationsByUserId(@PathVariable Long userId) {
+//        return reservationService.getReservationsByUserId(userId);
+//    }
 }
 
 

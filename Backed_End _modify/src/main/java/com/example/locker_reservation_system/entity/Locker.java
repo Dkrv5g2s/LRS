@@ -1,18 +1,26 @@
 package com.example.locker_reservation_system.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 public class Locker {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long lockerId;
+    private Long lockerId;
 
     private String site;
 
-    private Integer capacity;
+    private int capacity;
 
-    private Boolean usability;
+    private boolean usability;
+
+    @OneToMany(mappedBy = "locker", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<LockerDateDetail> dateDetails;
 }
