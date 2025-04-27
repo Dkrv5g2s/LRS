@@ -3,6 +3,7 @@ package com.example.locker_reservation_system.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import java.util.Date;
 
@@ -17,6 +18,7 @@ public class LockerDateDetail {
 
     @ManyToOne
     @JoinColumn(name = "locker_id", nullable = false)
+    @JsonBackReference
     private Locker locker;
 
     private Date date;

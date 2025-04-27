@@ -1,9 +1,9 @@
 package com.example.locker_reservation_system.controller;
 
 import com.example.locker_reservation_system.dto.LockerStatusResponse;
-import com.example.locker_reservation_system.dto.ReservationRequest;
 import com.example.locker_reservation_system.entity.Locker;
-import com.example.locker_reservation_system.service.LockerList;
+import com.example.locker_reservation_system.entity.LockerDateDetail;
+import com.example.locker_reservation_system.entity.LockerList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,10 +22,10 @@ public class ReservationController {
     private LockerList lockerList;
 
     @GetMapping("/status")
-    public List<Locker> getLockerReservationStatus(
+    public List<LockerStatusResponse> getLockerReservationStatus(
             @RequestParam("startDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
             @RequestParam("endDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
-        return lockerList.getLockers();
+        return lockerList.getLockerStatusByDateRange(startDate, endDate);
     }
 //
 //    @PostMapping

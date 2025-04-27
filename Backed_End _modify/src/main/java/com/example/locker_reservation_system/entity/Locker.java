@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.util.List;
 
 @Entity
@@ -22,5 +23,6 @@ public class Locker {
     private boolean usability;
 
     @OneToMany(mappedBy = "locker", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonManagedReference
     private List<LockerDateDetail> dateDetails;
 }
