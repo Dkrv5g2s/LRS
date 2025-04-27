@@ -7,9 +7,9 @@ import com.example.locker_reservation_system.repository.LockerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,48 +22,55 @@ public class LockerService {
     @Autowired
     private LockerDateDetailService lockerDateDetailService;
 
-    public List<LockerStatusResponse> getLockerStatusByDateRange(Date startDate, Date endDate) {
-        if (startDate.after(endDate)) {
+    /* 依區段回傳所有 Locker 的狀態 */
+    public List<LockerStatusResponse> getLockerStatusByDateRange(LocalDate startDate,
+                                                                 LocalDate endDate) {
+
+        if (startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("startDate cannot be greater than endDate");
         }
+
         List<Locker> lockers = lockerRepository.findAll();
         List<LockerStatusResponse> responses = new ArrayList<>();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         for (Locker locker : lockers) {
-            List<LockerDateDetail> details = lockerDateDetailService.findByLockerIdAndDateBetween(locker.getLockerId(), startDate, endDate);
 
-            LockerStatusResponse response = new LockerStatusResponse();
-            response.setLockerId(locker.getLockerId());
-            response.setSite(locker.getSite());
-            response.setCapacity(locker.getCapacity());
-            response.setUsability(locker.getUsability());
+            List<LockerDateDetail> details =
+                    lockerDateDetailService.findByLockerIdAndDateBetween(
+                            locker.getLockerId(), startDate, endDate);
+
+            LockerStatusResponse resp = new LockerStatusResponse();
+            resp.setLockerId(locker.getLockerId());
+            resp.setSite(locker.getSite());
+            resp.setCapacity(locker.getCapacity());
+            resp.setUsability(locker.getUsability());
 
             boolean allAvailable = true;
             StringBuilder memoBuilder = new StringBuilder();
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-            for (LockerDateDetail detail : details) {
-                if (!detail.getStatus().equals("available")) {
+            for (LockerDateDetail d : details) {
+                if (!"available".equalsIgnoreCase(d.getStatus())) {
                     allAvailable = false;
                 }
 
-                if (detail.getMemo() != null && !detail.getMemo().isEmpty()) {
-                    memoBuilder.append(dateFormat.format(detail.getDate())).append(": ").append(detail.getMemo()).append(", ");
+                if (d.getMemo() != null && !d.getMemo().isEmpty()) {
+                    memoBuilder.append(d.getDate().format(fmt))
+                            .append(": ")
+                            .append(d.getMemo())
+                            .append(", ");
                 }
             }
 
-            if (allAvailable) {
-                response.setStatus("available");
-            } else {
-                response.setStatus("Unavailable");
-            }
+            resp.setStatus(allAvailable ? "available" : "unavailable");
 
             String memo = memoBuilder.toString().trim();
             if (!memo.isEmpty()) {
-                response.setMemo(memo.substring(0, memo.length() - 1));
+                // 去掉最後一個逗號
+                resp.setMemo(memo.substring(0, memo.length() - 1));
             }
 
-            responses.add(response);
+            responses.add(resp);
         }
 
         return responses;
@@ -72,5 +79,4 @@ public class LockerService {
     public Optional<Locker> findLockerById(long lockerId) {
         return lockerRepository.findById(lockerId);
     }
-
 }

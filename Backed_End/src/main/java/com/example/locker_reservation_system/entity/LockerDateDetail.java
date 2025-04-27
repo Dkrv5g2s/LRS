@@ -1,10 +1,10 @@
 package com.example.locker_reservation_system.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.*;
-import com.fasterxml.jackson.annotation.JsonFormat; // 引入 JsonFormat
+import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -20,10 +20,9 @@ public class LockerDateDetail {
     private Locker locker;
 
     @Column(nullable = false)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd") // 設置日期格式
-    private Date date;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate date;
 
     private String status;
-
     private String memo;
 }

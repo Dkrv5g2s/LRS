@@ -1,10 +1,10 @@
 package com.example.locker_reservation_system.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.*;
-import com.fasterxml.jackson.annotation.JsonFormat; // 引入 JsonFormat
+import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -14,21 +14,17 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long reservationId;
 
-    @ManyToOne
-    @JoinColumn(name = "locker_id", nullable = false)
+    @ManyToOne  @JoinColumn(name = "locker_id", nullable = false)
     private Locker locker;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne  @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Temporal(TemporalType.DATE)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd") // 設置日期格式
-    private Date startDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate startDate;
 
-    @Temporal(TemporalType.DATE)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd") // 設置日期格式
-    private Date endDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
 
     private String barcode;
 }

@@ -15,13 +15,5 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/locker")
 public class LockerController {
-//    @Autowired
-//    private LockerService lockerService;
-//
-//    @GetMapping("/status")
-//    public List<LockerStatusResponse> getLockerStatus(
-//            @RequestParam("startDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
-//            @RequestParam("endDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
-//        return lockerService.getLockerStatusByDateRange(startDate, endDate);
-//    }
+
 }

@@ -92,7 +92,7 @@ export default function BasicTableOne() {
   };
 
   // 更新預約
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (selectedStartDate && selectedEndDate && selectedReservation) {
       const formattedStartDate = format(selectedStartDate, "yyyy-MM-dd");
       const formattedEndDate = format(selectedEndDate, "yyyy-MM-dd");
@@ -108,29 +108,34 @@ export default function BasicTableOne() {
       setStartDate(selectedStartDate);
       setEndDate(selectedEndDate);
 
-      axios
-        .put(`http://localhost:8080/api/reservation/${selectedReservation.reservationId}`, {
-          startDate: formattedStartDate,
-          endDate: formattedEndDate,
-        })
-        .then((response) => {
-          console.log("Reservation updated:", response.data);
-          setReservations(
-            reservations.map((reservation) =>
-              reservation.reservationId === selectedReservation.reservationId
-                ? { ...reservation, startDate: formattedStartDate, endDate: formattedEndDate }
-                : reservation
-            )
-          );
-          alert("預約已更新！");
-          closeDialog();
-        })
-        .catch((error) => {
-          console.error("Error updating reservation:", error);
-          alert("更新預約失敗！");
-        });
+      try {
+        const response = await axios.put(
+          `http://localhost:8080/api/reservation/${selectedReservation.reservationId}/dates`,
+          null,
+          {
+            params: {
+              newStartDate: formattedStartDate,
+              newEndDate: formattedEndDate
+            }
+          }
+        );
+        console.log("Reservation updated:", response.data);
+        setReservations(
+          reservations.map((reservation) =>
+            reservation.reservationId === selectedReservation.reservationId
+              ? { ...reservation, startDate: formattedStartDate, endDate: formattedEndDate }
+              : reservation
+          )
+        );
+        alert("預約已更新！");
+        closeDialog();
+      } catch (error) {
+        console.error("Error updating reservation:", error);
+        alert("更新預約失敗！");
+      }
     }
   };
+
 
   // 生成條碼
   const generateBarcode = (reservationId: number) => {
@@ -244,19 +249,19 @@ export default function BasicTableOne() {
                   />
                 </div>
                 <div><label >結束日期</label>
-                <DatePicker
-                  selected={selectedEndDate}
-                  onChange={handleEndDateChange}
-                  minDate={startDate || undefined}
-                  maxDate={endDate || undefined}
-                  dateFormat="yyyy/MM/dd"
-                  placeholderText="結束日期"
-                  className="border p-2"
-                  locale={zhTW}
-                />
+                  <DatePicker
+                    selected={selectedEndDate}
+                    onChange={handleEndDateChange}
+                    minDate={startDate || undefined}
+                    maxDate={endDate || undefined}
+                    dateFormat="yyyy/MM/dd"
+                    placeholderText="結束日期"
+                    className="border p-2"
+                    locale={zhTW}
+                  />
                 </div>
-              
-                
+
+
               </div>
             </div>
             <div className="flex justify-end space-x-2 px-2 mt-6 lg:justify-end">

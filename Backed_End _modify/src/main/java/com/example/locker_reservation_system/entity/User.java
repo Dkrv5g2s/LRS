@@ -32,13 +32,12 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Reservation> userReservationList;
 
-    @Autowired
-    private ReservationRepository reservationRepository; //
+
 
     @PostConstruct
     public void init() {
 
-        this.userReservationList = reservationRepository.findByUser(this);
+
     }
 
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
