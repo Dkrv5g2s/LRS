@@ -64,7 +64,7 @@ export default function StatisticsChart() {
     tooltip: {
       enabled: true, // Enable tooltip
       x: {
-        format: "dd MMM yyyy", // Format for x-axis tooltip
+        format: "dd MMM yyyy", // Format for x-axis 4
       },
     },
     xaxis: {

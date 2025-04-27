@@ -8,6 +8,7 @@ interface AlertProps {
   showLink?: boolean; // Whether to show the "Learn More" link
   linkHref?: string; // Link URL
   linkText?: string; // Link text
+  onClose?: () => void; // 新增 onClose prop
 }
 
 const Alert: React.FC<AlertProps> = ({
