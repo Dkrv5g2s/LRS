@@ -52,7 +52,7 @@ class ReservationControllerTest {
         when(lockerRepo.findById(1L)).thenReturn(Optional.of(l));
         when(userRepo.findById(5L)).thenReturn(Optional.of(u));
 
-        Reservation r = l.reserve(u, s, e);
+        Reservation r = u.reserve(l, s, e);
         
         assertThat(r.getLocker()).isEqualTo(l);
         assertThat(r.getUser()).isEqualTo(u);

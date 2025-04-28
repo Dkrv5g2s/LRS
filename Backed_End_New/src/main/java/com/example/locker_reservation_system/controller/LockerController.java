@@ -17,17 +17,7 @@ public class LockerController {
 
     @Autowired private LockerRepository lockerRepo;
 
-    /* ============ 查詢狀態 ============ */
-    @GetMapping("/status")
-    public List<LockerStatusResponse> status(
-            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
-            @RequestParam("endDate")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
 
-        if (start.isAfter(end)) throw new IllegalArgumentException("start > end");
-        return lockerRepo.findAll().stream()
-                .map(l -> l.toStatusResponse(start, end))
-                .collect(Collectors.toList());
-    }
 
     /* ============ 新增 Locker ============ */
 //    @PostMapping

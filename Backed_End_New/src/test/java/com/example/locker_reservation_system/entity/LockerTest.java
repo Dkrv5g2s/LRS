@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class LockerTest {
 
@@ -26,13 +27,39 @@ class LockerTest {
     }
 
     @Test
+    void testIsAvailable() {
+        assertTrue(locker.isAvailable(D1, D2));
+        user.reserve(locker, D1, D2);
+        assertFalse(locker.isAvailable(D1, D2));
+    }
+
+    @Test
+    void testReserveConflict() {
+        user.reserve(locker, D1, D2);
+        User user2 = new User();
+        user2.setUserId(2L);
+        user2.setAccountName("test2");
+        user2.setPhoneNumber("0987654321");
+        
+        assertThrows(RuntimeException.class, () -> user2.reserve(locker, D1, D2));
+    }
+
+    @Test
+    void testRelease() {
+        user.reserve(locker, D1, D2);
+        assertFalse(locker.isAvailable(D1, D2));
+        locker.release(D1, D2);
+        assertTrue(locker.isAvailable(D1, D2));
+    }
+
+    @Test
     void isAvailable_noRecord() {
         assertThat(locker.isAvailable(D1, D3)).isTrue();
     }
 
     @Test
     void reserve_and_dateDetailMarked() {
-        Reservation r = locker.reserve(user, D1, D2);
+        Reservation r = user.reserve(locker, D1, D2);
         assertThat(r).isNotNull();
 
         List<String> statuses = locker.getDateDetails().stream()
@@ -43,7 +70,7 @@ class LockerTest {
 
     @Test
     void reschedule_success() {
-        Reservation r = locker.reserve(user, D1, D2);
+        Reservation r = user.reserve(locker, D1, D2);
         r.reschedule(D3, D4);
         assertThat(r.getStartDate()).isEqualTo(D3);
         assertThat(locker.getDateDetails()
@@ -55,7 +82,7 @@ class LockerTest {
 
     @Test
     void cancel_shouldBecomeAvailable() {
-        Reservation r = locker.reserve(user, D1, D2);
+        Reservation r = user.reserve(locker, D1, D2);
         r.cancel();
         assertThat(locker.getDateDetails())
                 .allMatch(d -> "available".equals(d.getStatus()));

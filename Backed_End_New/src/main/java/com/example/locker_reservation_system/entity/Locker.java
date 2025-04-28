@@ -52,24 +52,8 @@ public class Locker {
                                 && !"available".equalsIgnoreCase(det.getStatus())));
     }
 
-    /** 建立預約；若衝突則丟例外 */
-    public Reservation reserve(User user, LocalDate start, LocalDate end) {
-        if (start.isAfter(end)) throw new IllegalArgumentException("start > end");
-        if (!isAvailable(start, end))
-            throw new RuntimeException("Locker already reserved in this period");
-
-        // 1. 標記日期
-        markDateRange(start, end, "occupied");
-
-        // 2. 建立 Reservation 與關聯
-        Reservation r = new Reservation(this, user, start, end);
-        reservations.add(r);
-        user.getReservations().add(r);
-        return r;
-    }
-
     /** 取消某筆預約 (由 Reservation 呼叫) */
-    void release(LocalDate start, LocalDate end) {
+    public void release(LocalDate start, LocalDate end) {
         markDateRange(start, end, "available");
     }
 
@@ -114,9 +98,9 @@ public class Locker {
         return resp;
     }
 
-    /* =========== 私有工具 =========== */
+    /* =========== 工具方法 =========== */
 
-    private void markDateRange(LocalDate start, LocalDate end, String status) {
+    public void markDateRange(LocalDate start, LocalDate end, String status) {
         generateDateStream(start, end).forEach(date -> {
             LockerDateDetail detail = dateDetails.stream()
                     .filter(d -> d.getDate().equals(date))

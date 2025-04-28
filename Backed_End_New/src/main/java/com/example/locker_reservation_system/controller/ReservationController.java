@@ -1,5 +1,6 @@
 package com.example.locker_reservation_system.controller;
 
+import com.example.locker_reservation_system.dto.LockerStatusResponse;
 import com.example.locker_reservation_system.dto.ReservationRequest;
 import com.example.locker_reservation_system.entity.*;
 import com.example.locker_reservation_system.repository.*;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController @RequestMapping("/api/reservations")
 public class ReservationController {
@@ -18,21 +20,28 @@ public class ReservationController {
     @Autowired private LockerRepository      lockerRepo;
     @Autowired private UserRepository        userRepo;
 
+    /* ============ 查詢狀態 ============ */
+    @GetMapping("/status")
+    public List<LockerStatusResponse> getLockerReservationStatus(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam("endDate")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+
+        if (start.isAfter(end)) throw new IllegalArgumentException("start > end");
+        return lockerRepo.findAll().stream()
+                .map(l -> l.toStatusResponse(start, end))
+                .collect(Collectors.toList());
+    }
+
     /* ===== 新增預約 ===== */
     @PostMapping
     @Transactional
     public Reservation reserve(@RequestBody ReservationRequest req) {
-
         Locker locker = lockerRepo.findById(req.getLockerId())
                 .orElseThrow(() -> new RuntimeException("Locker not found"));
         User user = userRepo.findById(req.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Reservation r = locker.reserve(user, req.getStartDate(), req.getEndDate());
-
-        // locker / user 與 reservation 因 cascade 持久化
-        //lockerRepo.save(locker);
-        return r;
+        return user.reserve(locker, req.getStartDate(), req.getEndDate());
     }
 
     /* ===== 依使用者查詢 ===== */
@@ -67,15 +76,11 @@ public class ReservationController {
         reservationRepo.delete(r);          // 仍需呼叫以產生 delete SQL
     }
 
-
-
-
-    // controller/ReservationController.java  新增段
+    /* ===== 管理員預約 ===== */
     @PostMapping("/admin")
     @Transactional
     public Reservation adminReserve(@RequestBody ReservationRequest req) {
         // 與一般 reserve 相同，只是路徑不同（可再加 @PreAuthorize）
         return reserve(req);
     }
-
 }

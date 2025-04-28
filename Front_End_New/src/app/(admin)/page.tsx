@@ -161,6 +161,7 @@ const LockerGrid = () => {
           placeholderText="開始日期"
           className="border p-2 mr-2"
           locale={zhTW}
+          minDate={today}
         />
         <DatePicker
           selected={endDate}
@@ -171,6 +172,7 @@ const LockerGrid = () => {
           placeholderText="結束日期"
           className="border p-2 mr-2"
           locale={zhTW}
+          minDate={today}
         />
         <button
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
