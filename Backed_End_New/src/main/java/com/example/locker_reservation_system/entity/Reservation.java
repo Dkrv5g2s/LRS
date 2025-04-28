@@ -49,14 +49,29 @@ public class Reservation {
     }
 
     /* 重新產生條碼 (給 reschedule 用) */
-    void regenerateBarcode() {
+    public void regenerateBarcode() {
         String raw = locker.getLockerId() + "-" + user.getUserId() + "-" + startDate + "-" + endDate;
         this.barcode = com.example.locker_reservation_system.util.BarcodeUtil.generateBase64(raw);
     }
 
     /* 調整日期 */
     public void reschedule(LocalDate newStart, LocalDate newEnd) {
-        locker.reschedule(this, newStart, newEnd);
+        if (newStart.isAfter(newEnd)) throw new IllegalArgumentException("start > end");
+        
+        // 先釋放原日期
+        locker.release(startDate, endDate);
+
+        // 檢查新區段是否可用
+        if (!locker.isAvailable(newStart, newEnd)) {
+            // 回滾原日期
+            locker.markDateRange(startDate, endDate, "occupied");
+            throw new RuntimeException("Locker already reserved in new period");
+        }
+
+        // 標記新區段並更新日期
+        locker.markDateRange(newStart, newEnd, "occupied");
+        this.startDate = newStart;
+        this.endDate = newEnd;
         regenerateBarcode();
     }
 

@@ -40,7 +40,7 @@ const LockerGrid = () => {
       const formattedStartDate = formatDate(start);
       const formattedEndDate = formatDate(end);
       const response = await axios.get(
-        `http://localhost:8080/api/lockers/status?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+        `http://localhost:8080/api/reservations/status?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
       );
       console.log("Fetched locker status:", response.data);
       setLockers(response.data);

@@ -57,24 +57,6 @@ public class Locker {
         markDateRange(start, end, "available");
     }
 
-    /** 修改預約日期；會做衝突檢查 */
-    public void reschedule(Reservation r, LocalDate newStart, LocalDate newEnd) {
-        // 先釋放原日期
-        release(r.getStartDate(), r.getEndDate());
-
-        // 檢查新區段是否可用
-        if (!isAvailable(newStart, newEnd)) {
-            // 回滾原日期
-            markDateRange(r.getStartDate(), r.getEndDate(), "occupied");
-            throw new RuntimeException("Locker already reserved in new period");
-        }
-
-        // 標記新區段並更新 Reservation
-        markDateRange(newStart, newEnd, "occupied");
-        r.setStartDate(newStart);
-        r.setEndDate(newEnd);
-    }
-
     /** 生成 LockerStatusResponse（for Controller） */
     public LockerStatusResponse toStatusResponse(LocalDate start, LocalDate end) {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
