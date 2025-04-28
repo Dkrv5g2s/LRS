@@ -74,7 +74,13 @@ class ReservationControllerTest {
         when(lockerRepo.findById(1L)).thenReturn(Optional.of(l));
         when(userRepo.findById(5L)).thenReturn(Optional.of(u));
 
-        Reservation r = u.reserve(l, s, e);
+        ReservationRequest req = new ReservationRequest();
+        req.setLockerId(1L);
+        req.setUserId(5L);
+        req.setStartDate(s);
+        req.setEndDate(e);
+
+        Reservation r = reservationController.reserve(req);
         
         assertThat(r.getLocker()).isEqualTo(l);
         assertThat(r.getUser()).isEqualTo(u);
@@ -94,7 +100,13 @@ class ReservationControllerTest {
         when(lockerRepo.findById(1L)).thenReturn(Optional.of(l));
         when(userRepo.findById(5L)).thenReturn(Optional.of(u));
 
-        assertThatThrownBy(() -> u.reserve(l, s, e))
+        ReservationRequest req = new ReservationRequest();
+        req.setLockerId(1L);
+        req.setUserId(5L);
+        req.setStartDate(s);
+        req.setEndDate(e);
+
+        assertThatThrownBy(() -> reservationController.reserve(req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("start > end");
     }
@@ -106,14 +118,16 @@ class ReservationControllerTest {
         User u = fakeUser();
 
         when(lockerRepo.findById(1L)).thenReturn(Optional.empty());
-        when(userRepo.findById(5L)).thenReturn(Optional.of(u));
 
-        assertThatThrownBy(() -> {
-            Locker locker = lockerRepo.findById(1L)
-                    .orElseThrow(() -> new RuntimeException("Locker not found"));
-            u.reserve(locker, s, e);
-        }).isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Locker not found");
+        ReservationRequest req = new ReservationRequest();
+        req.setLockerId(1L);
+        req.setUserId(5L);
+        req.setStartDate(s);
+        req.setEndDate(e);
+
+        assertThatThrownBy(() -> reservationController.reserve(req))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Locker not found");
     }
 
     /* ===== 取消 ===== */
@@ -127,8 +141,7 @@ class ReservationControllerTest {
 
         when(reservationRepo.findById(10L)).thenReturn(Optional.of(r));
 
-        r.cancel();
-        reservationRepo.delete(r);
+        reservationController.cancel(10L);
 
         verify(reservationRepo).delete(r);
         assertThat(u.getReservations()).doesNotContain(r);
@@ -159,29 +172,31 @@ class ReservationControllerTest {
 
         when(reservationRepo.findById(10L)).thenReturn(Optional.of(r));
 
-        r.reschedule(newS, newE);
+        Reservation updated = reservationController.updateDates(10L, newS, newE);
 
-        assertThat(r.getStartDate()).isEqualTo(newS);
-        assertThat(r.getEndDate()).isEqualTo(newE);
-        assertThat(r.getBarcode()).isNotBlank();
+        assertThat(updated.getStartDate()).isEqualTo(newS);
+        assertThat(updated.getEndDate()).isEqualTo(newE);
+        assertThat(updated.getBarcode()).isNotBlank();
     }
 
     @Test
     void reschedule_conflict() {
         Locker l = fakeLocker();
         User u = fakeUser();
-        User u2 = new User();
-        u2.setUserId(6L);
         LocalDate s = LocalDate.of(2025, 1, 1);
         LocalDate e = LocalDate.of(2025, 1, 2);
         LocalDate newS = LocalDate.of(2025, 1, 2);
         LocalDate newE = LocalDate.of(2025, 1, 3);
         Reservation r = fakeReservation(l, u, s, e);
-        Reservation r2 = u2.reserve(l, newS, newE);
 
         when(reservationRepo.findById(10L)).thenReturn(Optional.of(r));
 
-        assertThatThrownBy(() -> r.reschedule(newS, newE))
+        // 創建另一個預約並標記置物櫃的日期範圍
+        Reservation anotherReservation = new Reservation(l, u, newS, newE);
+        l.markDateRange(newS, newE, "occupied");
+        u.getReservations().add(anotherReservation);
+
+        assertThatThrownBy(() -> reservationController.updateDates(10L, newS, newE))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Locker already reserved");
     }

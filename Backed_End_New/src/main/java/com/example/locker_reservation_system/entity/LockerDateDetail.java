@@ -27,6 +27,13 @@ public class LockerDateDetail {
 
     private String memo;
 
+    public void setLocker(Locker locker) {
+        this.locker = locker;
+        if (locker != null && !locker.getDateDetails().contains(this)) {
+            locker.getDateDetails().add(this);
+        }
+    }
+
     @Override
     public String toString() {
         return "LockerDateDetail{" +

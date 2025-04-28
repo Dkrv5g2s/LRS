@@ -43,9 +43,9 @@ public class Locker {
     /** 回傳此區段是否全部可訂 */
     public boolean isAvailable(LocalDate start, LocalDate end) {
         return generateDateStream(start, end)
-                .noneMatch(d -> dateDetails.stream()
-                        .anyMatch(det -> det.getDate().equals(d)
-                                && !"available".equalsIgnoreCase(det.getStatus())));
+                .allMatch(d -> dateDetails.stream()
+                        .filter(det -> det.getDate().equals(d))
+                        .allMatch(det -> "available".equalsIgnoreCase(det.getStatus())));
     }
 
     /** 取消某筆預約 (由 Reservation 呼叫) */

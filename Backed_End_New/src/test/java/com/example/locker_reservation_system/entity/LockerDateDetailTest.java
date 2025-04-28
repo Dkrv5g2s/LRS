@@ -36,6 +36,7 @@ class LockerDateDetailTest {
         locker.setLockerId(1L);
         
         LockerDateDetail d = new LockerDateDetail();
+        d.setDate(DATE);
         d.setLocker(locker);
         
         assertThat(d.getLocker()).isEqualTo(locker);
