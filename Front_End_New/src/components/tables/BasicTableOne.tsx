@@ -7,13 +7,13 @@ import {
   TableCell,
   TableHeader,
   TableRow,
-} from "../ui/table";
+} from "../../components/ui/table";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css"; // 必須引入樣式
 import { useUser } from "../../context/UserContext";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale"; // 引入台灣地區的 locale
-import { Modal } from "../ui/modal/index"; // 引入 Modal
+import { Modal } from "../../components/ui/modal/index"; // 引入 Modal
 
 interface Reservation {
   reservationId: number;
@@ -182,51 +182,61 @@ export default function BasicTableOne() {
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{reservation.startDate}</TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{reservation.endDate}</TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-  {reservation.barcode ? (
-    <div className="relative">
-      <button
-        className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
-        onClick={() => {
-          // 切換條碼顯示和隱藏
-          const barcodeImg = document.getElementById(`barcode-${reservation.reservationId}`);
-          const button = document.getElementById(`barcode-button-${reservation.reservationId}`);
-          if (barcodeImg && button) {
-            barcodeImg.classList.toggle('hidden');
-            // 根據顯示狀態修改按鈕文字
-            if (barcodeImg.classList.contains('hidden')) {
-              button.innerText = '顯示條碼';
-            } else {
-              button.innerText = '隱藏條碼';
-            }
-          }
-        }}
-        id={`barcode-button-${reservation.reservationId}`}
-      >
-        顯示條碼
-      </button>
-      <img
-        id={`barcode-${reservation.reservationId}`}
-        src={`data:image/png;base64,${reservation.barcode}`}
-        alt="Reservation Barcode"
-        className="w-[300px] h-[150px] hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
-      />
-    </div>
-  ) : (
-    "N/A"
-  )}
-</TableCell>
-
-
+                    {reservation.barcode ? (
+                      new Date(reservation.endDate) < new Date() ? (
+                        <span className="text-red-500">已過期</span>
+                      ) : (
+                        <div className="relative">
+                          <button
+                            className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+                            onClick={() => {
+                              const barcodeImg = document.getElementById(`barcode-${reservation.reservationId}`);
+                              const button = document.getElementById(`barcode-button-${reservation.reservationId}`);
+                              if (barcodeImg && button) {
+                                barcodeImg.classList.toggle('hidden');
+                                if (barcodeImg.classList.contains('hidden')) {
+                                  button.innerText = '顯示條碼';
+                                } else {
+                                  button.innerText = '隱藏條碼';
+                                }
+                              }
+                            }}
+                            id={`barcode-button-${reservation.reservationId}`}
+                          >
+                            顯示條碼
+                          </button>
+                          <img
+                            id={`barcode-${reservation.reservationId}`}
+                            src={`data:image/png;base64,${reservation.barcode}`}
+                            alt="Reservation Barcode"
+                            className="w-[300px] h-[150px] hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+                          />
+                        </div>
+                      )
+                    ) : (
+                      "N/A"
+                    )}
+                  </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     <button
                       onClick={() => handleDelete(reservation.reservationId)}
-                      className="bg-red-500 text-white px-4 py-2 rounded mr-2"
+                      disabled={new Date(reservation.endDate) < new Date()}
+                      className={`px-4 py-2 rounded mr-2 ${
+                        new Date(reservation.endDate) < new Date()
+                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          : "bg-red-500 text-white hover:bg-red-600"
+                      }`}
                     >
                       刪除
                     </button>
                     <button
                       onClick={() => openEditDialog(reservation)}
-                      className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                      disabled={new Date(reservation.endDate) < new Date()}
+                      className={`px-4 py-2 rounded mr-2 ${
+                        new Date(reservation.endDate) < new Date()
+                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          : "bg-blue-500 text-white hover:bg-blue-600"
+                      }`}
                     >
                       更新
                     </button>
@@ -252,7 +262,7 @@ export default function BasicTableOne() {
           <form className="flex flex-col">
             <div className="px-2 pb-3">
               <div className="grid grid-cols-1 gap-x-3 gap-y-5 lg:grid-cols-2">
-                <div><label >開始日期</label>
+                <div><label >開始日期&nbsp;&nbsp;</label>
                   <DatePicker
                     selected={selectedStartDate}
                     onChange={handleStartDateChange}
@@ -262,7 +272,7 @@ export default function BasicTableOne() {
                     className="block w-full p-2 text-center text-gray-700 border border-gray-300 rounded-md"
                   />
                 </div>
-                <div><label>結束日期</label>
+                <div><label>結束日期&nbsp;&nbsp;</label>
                   <DatePicker
                     selected={selectedEndDate}
                     onChange={handleEndDateChange}

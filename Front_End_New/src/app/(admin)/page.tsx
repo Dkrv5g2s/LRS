@@ -5,6 +5,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useUser } from '../../context/UserContext';
 import { zhTW } from 'date-fns/locale';
+import LockerCard from "../../components/LockerCard";
+import BasicTableOne from "../../components/tables/BasicTableOne";
 
 interface Locker {
   lockerId: number;
@@ -21,7 +23,6 @@ const LockerGrid = () => {
   const today = new Date();
   const [startDate, setStartDate] = useState<Date | null>(today);
   const [endDate, setEndDate] = useState<Date | null>(today);
-  const [tooltip, setTooltip] = useState<{ visible: boolean; message: string; position: { top: number; left: number } }>({ visible: false, message: "", position: { top: 0, left: 0 } });
   const lockerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const formatDate = (date: Date): string => {
@@ -85,33 +86,6 @@ const LockerGrid = () => {
     }
   };
 
-  const handleMouseEnter = (locker: Locker, index: number) => {
-    const lockerRef = lockerRefs.current[index];
-    if (lockerRef) {
-      let message = "";
-      if (!locker.usability) {
-        message = `${locker.site} 無櫃位`;
-      } else if (locker.status !== "available") {
-        message = `${locker.site} 不可預約`;
-      } else {
-        message = `${locker.site} 可預約`;
-      }
-
-      setTooltip({
-        visible: true,
-        message,
-        position: {
-          top: lockerRef.offsetTop + 10,
-          left: lockerRef.offsetLeft - 100,
-        },
-      });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setTooltip({ ...tooltip, visible: false });
-  };
-
   const reserveLocker = async (lockerId: number) => {
     if (!user) {
       console.error("User is not logged in.");
@@ -149,116 +123,94 @@ const LockerGrid = () => {
   }, []); // 加入startDate和endDate作為依賴項
 
   return (
-    <div className="p-4 relative">
-      <div className="mb-4 flex justify-center items-center">
-        <label className="mr-2">選擇日期範圍</label>
-        <DatePicker
-          selected={startDate}
-          onChange={(date: Date | null) => {
-            handleDateChange(date, endDate);
-          }}
-          dateFormat="yyyy/MM/dd"
-          placeholderText="開始日期"
-          className="border p-2 mr-2"
-          locale={zhTW}
-          minDate={today}
-        />
-        <DatePicker
-          selected={endDate}
-          onChange={(date: Date | null) => {
-            handleDateChange(startDate, date);
-          }}
-          dateFormat="yyyy/MM/dd"
-          placeholderText="結束日期"
-          className="border p-2 mr-2"
-          locale={zhTW}
-          minDate={today}
-        />
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={handleSearch}
-        >
-          搜尋
-        </button>
-      </div>
-
-      {tooltip.visible && (
-        <div
-          className="absolute bg-gray-700 text-white p-2 rounded"
-          style={{
-            top: `${tooltip.position.top - 20}px`,
-            left: `${tooltip.position.left + 200}px`,
-          }}
-        >
-          {tooltip.message}
-        </div>
-      )}
-
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 border-b-2 mb-4"></div>
-
-        <div className="col-span-5 grid grid-cols-2 gap-2">
-          {lockers.slice(0, 10).map((locker, index) => (
-            <div
-              key={locker.lockerId}
-              className={`p-4 border rounded-lg ${locker.usability
-                ? locker.status === "available"
-                  ? "bg-green-500 cursor-pointer"
-                  : "bg-red-500 cursor-not-allowed"
-                : "bg-black opacity-50 cursor-not-allowed"
-                }`}
-              onClick={() => handleLockerClick(locker, index)}
-              onMouseEnter={() => handleMouseEnter(locker, index)}
-              onMouseLeave={handleMouseLeave}
-              ref={(el) => {
-                lockerRefs.current[index] = el;
-              }}
-            >
-              {locker.usability ? (
-                <>
-                  <p>位置: {locker.site}</p>
-                  <p>容量: {locker.capacity}</p>
-                  <p>備註:<br /> {locker.memo}</p>
-                </>
-              ) : (
-                <div></div>
-              )}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* 日期選擇區域 */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <label className="text-gray-700 font-medium">開始日期</label>
+              <DatePicker
+                selected={startDate}
+                onChange={(date: Date | null) => {
+                  handleDateChange(date, endDate);
+                }}
+                dateFormat="yyyy/MM/dd"
+                placeholderText="選擇開始日期"
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                locale={zhTW}
+                minDate={today}
+              />
             </div>
-          ))}
-        </div>
 
-        <div className="col-span-2 flex flex-col items-center justify-center">
-          <div className="border-l-2 h-full"></div>
-        </div>
-
-        <div className="col-span-5 grid grid-cols-2 gap-2">
-          {lockers.slice(10, 20).map((locker, index) => (
-            <div
-              key={locker.lockerId}
-              className={`p-4 border rounded-lg ${locker.usability
-                ? locker.status === "available"
-                  ? "bg-green-500 cursor-pointer"
-                  : "bg-red-500 cursor-not-allowed"
-                : "bg-black opacity-50 cursor-not-allowed"
-                }`}
-              onClick={() => handleLockerClick(locker, index + 10)}
-              onMouseEnter={() => handleMouseEnter(locker, index + 10)}
-              onMouseLeave={handleMouseLeave}
-              ref={(el) => {
-                lockerRefs.current[index + 10] = el;
-              }}
-            >
-              {locker.usability ? (
-                <>
-                  <p>位置: {locker.site}</p>
-                  <p>容量: {locker.capacity}</p>
-                  <p>備註:<br /> {locker.memo}</p>
-                </>
-              ) : (
-                <div></div>
-              )}
+            <div className="flex items-center space-x-2">
+              <label className="text-gray-700 font-medium">結束日期</label>
+              <DatePicker
+                selected={endDate}
+                onChange={(date: Date | null) => {
+                  handleDateChange(startDate, date);
+                }}
+                dateFormat="yyyy/MM/dd"
+                placeholderText="選擇結束日期"
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                locale={zhTW}
+                minDate={today}
+              />
             </div>
-          ))}
+
+            <button
+              className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200 flex items-center space-x-2"
+              onClick={handleSearch}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span>搜尋</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 置物櫃網格 */}
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12">
+            <div className="h-1 bg-gray-200 rounded-full mb-6"></div>
+          </div>
+
+          <div className="col-span-5 grid grid-cols-2 gap-4">
+            {lockers.slice(0, 10).map((locker, index) => (
+              <LockerCard
+                key={locker.lockerId}
+                locker={locker}
+                index={index}
+                onLockerClick={handleLockerClick}
+                onMouseEnter={() => {}}
+                onMouseLeave={() => {}}
+                refCallback={(el) => {
+                  lockerRefs.current[index] = el;
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="col-span-2 flex flex-col items-center justify-center">
+            <div className="h-full w-1 bg-gray-200 rounded-full"></div>
+          </div>
+
+          <div className="col-span-5 grid grid-cols-2 gap-4">
+            {lockers.slice(10, 20).map((locker, index) => (
+              <LockerCard
+                key={locker.lockerId}
+                locker={locker}
+                index={index + 10}
+                onLockerClick={handleLockerClick}
+                onMouseEnter={() => {}}
+                onMouseLeave={() => {}}
+                refCallback={(el) => {
+                  lockerRefs.current[index + 10] = el;
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
