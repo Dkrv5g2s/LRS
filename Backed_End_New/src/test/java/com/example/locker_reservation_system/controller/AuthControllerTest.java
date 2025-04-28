@@ -4,20 +4,28 @@ import com.example.locker_reservation_system.dto.LoginRequest;
 import com.example.locker_reservation_system.dto.RegisterRequest;
 import com.example.locker_reservation_system.entity.User;
 import com.example.locker_reservation_system.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
 class AuthControllerTest {
 
-    @MockBean
-    UserRepository userRepo;
+    @Mock
+    private UserRepository userRepo;
+
+    @InjectMocks
+    private AuthController authController;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     private User createUser() {
         User u = new User();
@@ -35,21 +43,25 @@ class AuthControllerTest {
         req.setPassword("pwd");
         req.setPhoneNumber("0988");
 
-        when(userRepo.save(any(User.class))).thenAnswer(a -> a.getArgument(0));
-
         User user = new User();
         user.setAccountName(req.getAccountName());
         user.setEncryptedPassword(req.getPassword());
         user.setPhoneNumber(req.getPhoneNumber());
+
+        when(userRepo.findByAccountName("tom")).thenReturn(null);
+        when(userRepo.save(any(User.class))).thenReturn(user);
+
+        ResponseEntity<?> result = authController.register(req);
         
-        User savedUser = userRepo.save(user);
-        
-        ArgumentCaptor<User> cap = ArgumentCaptor.forClass(User.class);
-        verify(userRepo).save(cap.capture());
-        
+        assertThat(result.getStatusCode().value()).isEqualTo(200);
+        assertThat(result.getBody()).isInstanceOf(User.class);
+        User savedUser = (User) result.getBody();
         assertThat(savedUser.getAccountName()).isEqualTo("tom");
         assertThat(savedUser.getPhoneNumber()).isEqualTo("0988");
         assertThat(savedUser.checkPassword("pwd")).isTrue();
+
+        verify(userRepo).findByAccountName("tom");
+        verify(userRepo).save(any(User.class));
     }
 
     @Test
@@ -61,13 +73,13 @@ class AuthControllerTest {
 
         when(userRepo.findByAccountName("tom")).thenReturn(createUser());
 
-        assertThatThrownBy(() -> {
-            User existingUser = userRepo.findByAccountName(req.getAccountName());
-            if (existingUser != null) {
-                throw new RuntimeException("Account name already exists");
-            }
-        }).isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Account name already exists");
+        ResponseEntity<?> result = authController.register(req);
+        
+        assertThat(result.getStatusCode().value()).isEqualTo(400);
+        assertThat(result.getBody()).isEqualTo("Account name already exists");
+
+        verify(userRepo).findByAccountName("tom");
+        verify(userRepo, never()).save(any(User.class));
     }
 
     @Test
@@ -79,10 +91,14 @@ class AuthControllerTest {
         req.setAccountName("test");
         req.setPassword("password");
 
-        User foundUser = userRepo.findByAccountName(req.getAccountName());
-        assertThat(foundUser).isNotNull();
-        assertThat(foundUser.getAccountName()).isEqualTo(req.getAccountName());
-        assertThat(foundUser.checkPassword(req.getPassword())).isTrue();
+        ResponseEntity<?> result = authController.login(req);
+        
+        assertThat(result.getStatusCode().value()).isEqualTo(200);
+        assertThat(result.getBody()).isInstanceOf(User.class);
+        User user = (User) result.getBody();
+        assertThat(user.getAccountName()).isEqualTo("test");
+
+        verify(userRepo).findByAccountName("test");
     }
 
     @Test
@@ -94,9 +110,12 @@ class AuthControllerTest {
         req.setAccountName("test");
         req.setPassword("wrong");
 
-        User foundUser = userRepo.findByAccountName(req.getAccountName());
-        assertThat(foundUser).isNotNull();
-        assertThat(foundUser.checkPassword(req.getPassword())).isFalse();
+        ResponseEntity<?> result = authController.login(req);
+        
+        assertThat(result.getStatusCode().value()).isEqualTo(401);
+        assertThat(result.getBody()).isEqualTo("Invalid credentials");
+
+        verify(userRepo).findByAccountName("test");
     }
 
     @Test
@@ -107,26 +126,13 @@ class AuthControllerTest {
         req.setAccountName("test");
         req.setPassword("password");
 
-        User foundUser = userRepo.findByAccountName(req.getAccountName());
-        assertThat(foundUser).isNull();
+        ResponseEntity<?> result = authController.login(req);
+        
+        assertThat(result.getStatusCode().value()).isEqualTo(401);
+        assertThat(result.getBody()).isEqualTo("Invalid credentials");
+
+        verify(userRepo).findByAccountName("test");
     }
 
-    @Test
-    void getUserById() {
-        User u = createUser();
-        when(userRepo.findById(1L)).thenReturn(java.util.Optional.of(u));
-
-        User foundUser = userRepo.findById(1L).orElseThrow();
-        assertThat(foundUser).isNotNull();
-        assertThat(foundUser.getUserId()).isEqualTo(1L);
-        assertThat(foundUser.getAccountName()).isEqualTo("test");
-    }
-
-    @Test
-    void getUserById_notFound() {
-        when(userRepo.findById(1L)).thenReturn(java.util.Optional.empty());
-
-        assertThatThrownBy(() -> userRepo.findById(1L).orElseThrow())
-                .isInstanceOf(RuntimeException.class);
-    }
+   
 }

@@ -15,12 +15,18 @@ public class AuthController {
     @Autowired private UserRepository userRepo;
 
     @PostMapping("/register")
-    public User register(@RequestBody RegisterRequest req) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
+        // 檢查帳號是否已存在
+        if (userRepo.findByAccountName(req.getAccountName()) != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Account name already exists");
+        }
+
         User user = new User();
         user.setAccountName(req.getAccountName());
         user.setEncryptedPassword(req.getPassword());
         user.setPhoneNumber(req.getPhoneNumber());
-        return userRepo.save(user);
+        return ResponseEntity.ok(userRepo.save(user));
     }
 
     @PostMapping("/login")
