@@ -42,10 +42,8 @@ public class Reservation {
     /* ====== 行為 ====== */
     /** 取消預約 */
     public void cancel() {
-        locker.release(startDate, endDate);
-        // 移除關聯
-        user.getReservations().remove(this);
-        locker.getReservations().remove(this);
+        this.locker.release(this.startDate, this.endDate);
+        this.user.getReservations().remove(this);
     }
 
     /* 重新產生條碼 (給 reschedule 用) */

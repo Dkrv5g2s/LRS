@@ -28,10 +28,6 @@ public class Locker {
     @JsonIgnore
     private List<LockerDateDetail> dateDetails = new ArrayList<>();
 
-    @OneToMany(mappedBy = "locker", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Reservation> reservations = new ArrayList<>();
-
     @Override
     public String toString() {
         return "Locker{" +

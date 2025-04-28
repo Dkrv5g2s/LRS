@@ -32,11 +32,20 @@ public class ReservationTest {
     }
 
     @Test
+    void testConstructor() {
+        Reservation reservation = new Reservation(locker, user, D1, D2);
+        assertEquals(locker, reservation.getLocker());
+        assertEquals(user, reservation.getUser());
+        assertEquals(D1, reservation.getStartDate());
+        assertEquals(D2, reservation.getEndDate());
+        assertNotNull(reservation.getBarcode());
+    }
+
+    @Test
     void testCancel() {
         r.cancel();
         assertTrue(locker.isAvailable(D1, D2));
         assertFalse(user.getReservations().contains(r));
-        assertFalse(locker.getReservations().contains(r));
     }
 
     @Test
@@ -59,5 +68,30 @@ public class ReservationTest {
         assertThrows(RuntimeException.class, () -> r.reschedule(D2, D3));
         assertEquals(D1, r.getStartDate());
         assertEquals(D2, r.getEndDate());
+    }
+
+    @Test
+    void testRescheduleInvalidDateRange() {
+        assertThrows(IllegalArgumentException.class, () -> r.reschedule(D2, D1));
+    }
+
+    @Test
+    void testBarcodeGeneration() {
+        assertNotNull(r.getBarcode());
+        String originalBarcode = r.getBarcode();
+        
+        r.regenerateBarcode();
+        assertNotEquals(originalBarcode, r.getBarcode());
+    }
+
+    @Test
+    void testToString() {
+        String str = r.toString();
+        assertTrue(str.contains("reservationId="));
+        assertTrue(str.contains("locker="));
+        assertTrue(str.contains("user="));
+        assertTrue(str.contains("startDate="));
+        assertTrue(str.contains("endDate="));
+        assertTrue(str.contains("barcode="));
     }
 }

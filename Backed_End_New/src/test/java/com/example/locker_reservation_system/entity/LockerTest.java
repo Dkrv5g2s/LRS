@@ -1,5 +1,6 @@
 package com.example.locker_reservation_system.entity;
 
+import com.example.locker_reservation_system.dto.LockerStatusResponse;
 import org.junit.jupiter.api.*;
 
 import java.time.LocalDate;
@@ -22,8 +23,14 @@ class LockerTest {
     void init() {
         locker = new Locker();
         locker.setLockerId(1L);
+        locker.setSite("A");
+        locker.setCapacity(1);
+        locker.setUsability(true);
+        
         user = new User();
         user.setUserId(9L);
+        user.setAccountName("test");
+        user.setPhoneNumber("1234567890");
     }
 
     @Test
@@ -86,5 +93,41 @@ class LockerTest {
         r.cancel();
         assertThat(locker.getDateDetails())
                 .allMatch(d -> "available".equals(d.getStatus()));
+    }
+
+    @Test
+    void testMarkDateRange() {
+        locker.markDateRange(D1, D2, "maintenance");
+        assertThat(locker.getDateDetails())
+                .allMatch(d -> "maintenance".equals(d.getStatus()));
+    }
+
+    @Test
+    void testToStatusResponse() {
+        LockerStatusResponse response = locker.toStatusResponse(D1, D2);
+        assertThat(response.getLockerId()).isEqualTo(locker.getLockerId());
+        assertThat(response.getSite()).isEqualTo(locker.getSite());
+        assertThat(response.getCapacity()).isEqualTo(locker.getCapacity());
+        assertThat(response.getUsability()).isEqualTo(locker.getUsability());
+        assertThat(response.getStatus()).isEqualTo("available");
+        assertThat(response.getMemo()).isEmpty();
+
+        // 添加備註後再次測試
+        locker.markDateRange(D1, D1, "maintenance");
+        LockerDateDetail detail = locker.getDateDetails().get(0);
+        detail.setMemo("維修中");
+        
+        response = locker.toStatusResponse(D1, D2);
+        assertThat(response.getStatus()).isEqualTo("unavailable");
+        assertThat(response.getMemo()).contains("維修中");
+    }
+
+    @Test
+    void testToString() {
+        String str = locker.toString();
+        assertThat(str).contains("lockerId=" + locker.getLockerId());
+        assertThat(str).contains("site='" + locker.getSite() + "'");
+        assertThat(str).contains("capacity=" + locker.getCapacity());
+        assertThat(str).contains("usability=" + locker.getUsability());
     }
 }

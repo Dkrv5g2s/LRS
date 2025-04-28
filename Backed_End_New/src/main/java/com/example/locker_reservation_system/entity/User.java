@@ -55,7 +55,6 @@ public class User {
         // 建立預約
         Reservation r = new Reservation(locker, this, start, end);
         reservations.add(r);
-        locker.getReservations().add(r);
         return r;
     }
 
