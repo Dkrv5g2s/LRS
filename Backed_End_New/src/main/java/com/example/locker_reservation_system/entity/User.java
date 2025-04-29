@@ -49,8 +49,8 @@ public class User {
             throw new RuntimeException("Locker already reserved in this period");
         }
 
-        // 標記日期範圍
-        locker.markDateRange(start, end, "occupied");
+//        // 標記日期範圍
+//        locker.markDateRange(start, end, "occupied");
 
         // 建立預約
         Reservation r = new Reservation(locker, this, start, end);

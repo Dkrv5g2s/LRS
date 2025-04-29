@@ -37,6 +37,8 @@ public class Reservation {
         this.startDate = start;
         this.endDate = end;
         regenerateBarcode();
+        // 標記日期範圍
+        locker.markDateRange(start, end, "occupied");
     }
 
     /* ====== 行為 ====== */
