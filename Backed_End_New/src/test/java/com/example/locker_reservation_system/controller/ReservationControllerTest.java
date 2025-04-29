@@ -172,7 +172,7 @@ class ReservationControllerTest {
 
         when(reservationRepo.findById(10L)).thenReturn(Optional.of(r));
 
-        Reservation updated = reservationController.updateDates(10L, newS, newE);
+        Reservation updated = reservationController.updateReservationDates(10L, newS, newE);
 
         assertThat(updated.getStartDate()).isEqualTo(newS);
         assertThat(updated.getEndDate()).isEqualTo(newE);
@@ -196,7 +196,7 @@ class ReservationControllerTest {
         l.markDateRange(newS, newE, "occupied");
         u.getReservations().add(anotherReservation);
 
-        assertThatThrownBy(() -> reservationController.updateDates(10L, newS, newE))
+        assertThatThrownBy(() -> reservationController.updateReservationDates(10L, newS, newE))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Locker already reserved");
     }

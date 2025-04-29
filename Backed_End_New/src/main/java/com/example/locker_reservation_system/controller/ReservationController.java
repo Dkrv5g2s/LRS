@@ -55,7 +55,7 @@ public class ReservationController {
     /* ===== 修改日期 ===== */
     @PutMapping("/{id}/dates")
     @Transactional
-    public Reservation updateDates(@PathVariable Long id,
+    public Reservation updateReservationDates(@PathVariable Long id,
                                    @RequestParam("newStartDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newStart,
                                    @RequestParam("newEndDate")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newEnd) {
 
