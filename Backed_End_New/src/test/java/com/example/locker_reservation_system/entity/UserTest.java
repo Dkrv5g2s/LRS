@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDate;
 
@@ -12,6 +13,7 @@ class UserTest {
     private Locker locker;
     private final LocalDate D1 = LocalDate.of(2024, 1, 1);
     private final LocalDate D2 = LocalDate.of(2024, 1, 3);
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @BeforeEach
     void setUp() {
@@ -19,7 +21,7 @@ class UserTest {
         user.setUserId(1L);
         user.setAccountName("test");
         user.setPhoneNumber("1234567890");
-        user.setEncryptedPassword("mypw");
+        user.setEncryptedPassword(encoder.encode("mypw"));
 
         locker = new Locker();
         locker.setLockerId(1L);
