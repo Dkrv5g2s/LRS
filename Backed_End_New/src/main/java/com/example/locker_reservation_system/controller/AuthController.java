@@ -22,10 +22,7 @@ public class AuthController {
                     .body("Account name already exists");
         }
 
-        User user = new User();
-        user.setAccountName(req.getAccountName());
-        user.setEncryptedPassword(req.getPassword());
-        user.setPhoneNumber(req.getPhoneNumber());
+        User user = new User(req.getAccountName(), req.getPassword(), req.getPhoneNumber());
         return ResponseEntity.ok(userRepo.save(user));
     }
 

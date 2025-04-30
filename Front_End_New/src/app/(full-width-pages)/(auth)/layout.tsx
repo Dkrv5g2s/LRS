@@ -22,7 +22,7 @@ export default function AuthLayout({
               <GridShape />
               <div className="flex flex-col items-center ">
                 <Link href="/" className="block mb-4">
-                <span className="text-3xl font-bold text-white">Loker Reservation System</span>
+                <span className="text-3xl font-bold text-white">Locker Reservation System</span>
                 </Link>
                 
               </div>

@@ -28,12 +28,7 @@ class AuthControllerTest {
     }
 
     private User createUser() {
-        User u = new User();
-        u.setUserId(1L);
-        u.setAccountName("test");
-        u.setPhoneNumber("1234567890");
-        u.setEncryptedPassword("password");
-        return u;
+        return new User("test", "password", "1234567890");
     }
 
     @Test
@@ -43,10 +38,7 @@ class AuthControllerTest {
         req.setPassword("pwd");
         req.setPhoneNumber("0988");
 
-        User user = new User();
-        user.setAccountName(req.getAccountName());
-        user.setEncryptedPassword(req.getPassword());
-        user.setPhoneNumber(req.getPhoneNumber());
+        User user = new User(req.getAccountName(), req.getPassword(), req.getPhoneNumber());
 
         when(userRepo.findByAccountName("tom")).thenReturn(null);
         when(userRepo.save(any(User.class))).thenReturn(user);
@@ -133,6 +125,4 @@ class AuthControllerTest {
 
         verify(userRepo).findByAccountName("test");
     }
-
-   
 }

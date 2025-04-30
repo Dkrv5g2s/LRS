@@ -3,13 +3,14 @@ package com.example.locker_reservation_system.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDate;
 
-@Entity @Data
+@Entity @Data @NoArgsConstructor
 public class User {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,9 +19,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String accountName;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     @JsonIgnore
-    private String password;            // 加密後
+    private String encryptedPassword;            // 加密後
 
     @Column(nullable = false)
     private String phoneNumber;
@@ -32,12 +33,15 @@ public class User {
     @JsonIgnore
     private List<Reservation> reservations = new ArrayList<>();
 
-    /* ==== 密碼工具 ==== */
-    private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    public User(String accountName, String password, String phoneNumber) {
+        this.accountName = accountName;
+        this.encryptedPassword = new BCryptPasswordEncoder().encode(password);
+        this.phoneNumber = phoneNumber;
+    }
 
-    public void setEncryptedPassword(String raw) { this.password = encoder.encode(raw); }
-
-    public boolean checkPassword(String raw) { return encoder.matches(raw, this.password); }
+    public boolean checkPassword(String password) {
+        return new BCryptPasswordEncoder().matches(password, encryptedPassword);
+    }
 
     /* ====== 預約相關行為 ====== */
     /** 預約置物櫃 */
