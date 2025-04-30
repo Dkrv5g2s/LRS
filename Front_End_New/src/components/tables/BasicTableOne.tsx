@@ -183,36 +183,51 @@ export default function BasicTableOne() {
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{reservation.endDate}</TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     {reservation.barcode ? (
-                      new Date(reservation.endDate) < new Date() ? (
-                        <span className="text-red-500">已過期</span>
-                      ) : (
-                        <div className="relative">
-                          <button
-                            className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
-                            onClick={() => {
-                              const barcodeImg = document.getElementById(`barcode-${reservation.reservationId}`);
-                              const button = document.getElementById(`barcode-button-${reservation.reservationId}`);
-                              if (barcodeImg && button) {
-                                barcodeImg.classList.toggle('hidden');
-                                if (barcodeImg.classList.contains('hidden')) {
-                                  button.innerText = '顯示條碼';
-                                } else {
-                                  button.innerText = '隱藏條碼';
+                      (() => {
+                        const endDate = new Date(reservation.endDate);
+                        const today = new Date();
+                        // 將時間部分設為0，只比較日期
+                        endDate.setHours(0, 0, 0, 0);
+                        today.setHours(0, 0, 0, 0);
+                        
+                        console.log('Debug dates:', {
+                          reservationEndDate: reservation.endDate,
+                          parsedEndDate: endDate,
+                          today: today,
+                          isExpired: endDate < today
+                        });
+                        
+                        return endDate < today ? (
+                          <span className="text-red-500">已過期</span>
+                        ) : (
+                          <div className="relative">
+                            <button
+                              className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+                              onClick={() => {
+                                const barcodeImg = document.getElementById(`barcode-${reservation.reservationId}`);
+                                const button = document.getElementById(`barcode-button-${reservation.reservationId}`);
+                                if (barcodeImg && button) {
+                                  barcodeImg.classList.toggle('hidden');
+                                  if (barcodeImg.classList.contains('hidden')) {
+                                    button.innerText = '顯示條碼';
+                                  } else {
+                                    button.innerText = '隱藏條碼';
+                                  }
                                 }
-                              }
-                            }}
-                            id={`barcode-button-${reservation.reservationId}`}
-                          >
-                            顯示條碼
-                          </button>
-                          <img
-                            id={`barcode-${reservation.reservationId}`}
-                            src={`data:image/png;base64,${reservation.barcode}`}
-                            alt="Reservation Barcode"
-                            className="w-[300px] h-[150px] hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
-                          />
-                        </div>
-                      )
+                              }}
+                              id={`barcode-button-${reservation.reservationId}`}
+                            >
+                              顯示條碼
+                            </button>
+                            <img
+                              id={`barcode-${reservation.reservationId}`}
+                              src={`data:image/png;base64,${reservation.barcode}`}
+                              alt="Reservation Barcode"
+                              className="w-[300px] h-[150px] hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+                            />
+                          </div>
+                        );
+                      })()
                     ) : (
                       "N/A"
                     )}
@@ -220,9 +235,21 @@ export default function BasicTableOne() {
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     <button
                       onClick={() => handleDelete(reservation.reservationId)}
-                      disabled={new Date(reservation.endDate) < new Date()}
+                      disabled={(() => {
+                        const endDate = new Date(reservation.endDate);
+                        const today = new Date();
+                        endDate.setHours(0, 0, 0, 0);
+                        today.setHours(0, 0, 0, 0);
+                        return endDate < today;
+                      })()}
                       className={`px-4 py-2 rounded mr-2 ${
-                        new Date(reservation.endDate) < new Date()
+                        (() => {
+                          const endDate = new Date(reservation.endDate);
+                          const today = new Date();
+                          endDate.setHours(0, 0, 0, 0);
+                          today.setHours(0, 0, 0, 0);
+                          return endDate < today;
+                        })()
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-red-500 text-white hover:bg-red-600"
                       }`}
@@ -231,9 +258,21 @@ export default function BasicTableOne() {
                     </button>
                     <button
                       onClick={() => openEditDialog(reservation)}
-                      disabled={new Date(reservation.endDate) < new Date()}
+                      disabled={(() => {
+                        const endDate = new Date(reservation.endDate);
+                        const today = new Date();
+                        endDate.setHours(0, 0, 0, 0);
+                        today.setHours(0, 0, 0, 0);
+                        return endDate < today;
+                      })()}
                       className={`px-4 py-2 rounded mr-2 ${
-                        new Date(reservation.endDate) < new Date()
+                        (() => {
+                          const endDate = new Date(reservation.endDate);
+                          const today = new Date();
+                          endDate.setHours(0, 0, 0, 0);
+                          today.setHours(0, 0, 0, 0);
+                          return endDate < today;
+                        })()
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-blue-500 text-white hover:bg-blue-600"
                       }`}
