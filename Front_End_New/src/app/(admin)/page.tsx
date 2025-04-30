@@ -47,7 +47,7 @@ const LockerGrid = () => {
       setLockers(response.data);
     } catch (error) {
       console.error("Error fetching locker status:", error);
-      alert("查詢失敗，請稍後再試！");
+      alert("Query failed, please try again later!");
   
       // 當錯誤發生時將日期回復為當前日期並重新查詢
       const today = new Date();
@@ -68,7 +68,7 @@ const LockerGrid = () => {
     if (startDate instanceof Date && endDate instanceof Date) {
       fetchLockerStatus(startDate, endDate);
     } else {
-      alert("請選擇起始與結束日期！");
+      alert("Please select both start and end dates!");
     }
   };
 
@@ -79,7 +79,7 @@ const LockerGrid = () => {
       startDate instanceof Date &&
       endDate instanceof Date
     ) {
-      const confirmed = window.confirm("確定要預約此櫃子嗎?");
+      const confirmed = window.confirm("Are you sure you want to reserve this locker?");
       if (confirmed) {
         reserveLocker(locker.lockerId);
       }
@@ -93,7 +93,7 @@ const LockerGrid = () => {
     }
 
     if (!(startDate instanceof Date) || !(endDate instanceof Date)) {
-      alert("請先選擇預約日期！");
+      alert("Please select reservation dates first!");
       return;
     }
 
@@ -107,11 +107,11 @@ const LockerGrid = () => {
     try {
       const response = await axios.post(`http://localhost:8080/api/reservations`, reservationRequest);
       console.log("Locker reserved successfully:", response.data);
-      alert("預約成功！");
+      alert("Reservation successful!");
       fetchLockerStatus(startDate, endDate); // 預約成功後更新列表
     } catch (error) {
       console.error("Error reserving locker:", error);
-      alert("預約失敗，請稍後再試！");
+      alert("Reservation failed, please try again later!");
     }
   };
 
@@ -129,14 +129,14 @@ const LockerGrid = () => {
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-center items-center gap-4">
             <div className="flex items-center space-x-2">
-              <label className="text-gray-700 font-medium">開始日期</label>
+              <label className="text-gray-700 font-medium">Start Date</label>
               <DatePicker
                 selected={startDate}
                 onChange={(date: Date | null) => {
                   handleDateChange(date, endDate);
                 }}
                 dateFormat="yyyy/MM/dd"
-                placeholderText="選擇開始日期"
+                placeholderText="Select start date"
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 locale={zhTW}
                 minDate={today}
@@ -144,14 +144,14 @@ const LockerGrid = () => {
             </div>
 
             <div className="flex items-center space-x-2">
-              <label className="text-gray-700 font-medium">結束日期</label>
+              <label className="text-gray-700 font-medium">End Date</label>
               <DatePicker
                 selected={endDate}
                 onChange={(date: Date | null) => {
                   handleDateChange(startDate, date);
                 }}
                 dateFormat="yyyy/MM/dd"
-                placeholderText="選擇結束日期"
+                placeholderText="Select end date"
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 locale={zhTW}
                 minDate={today}
@@ -165,7 +165,7 @@ const LockerGrid = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <span>搜尋</span>
+              <span>Search</span>
             </button>
           </div>
         </div>

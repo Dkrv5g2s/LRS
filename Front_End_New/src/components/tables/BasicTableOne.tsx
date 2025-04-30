@@ -9,11 +9,11 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css"; // 必須引入樣式
+import "react-datepicker/dist/react-datepicker.css"; 
 import { useUser } from "../../context/UserContext";
 import { format } from "date-fns";
-import { zhTW } from "date-fns/locale"; // 引入台灣地區的 locale
-import { Modal } from "../../components/ui/modal/index"; // 引入 Modal
+import { zhTW } from "date-fns/locale"; 
+import { Modal } from "../../components/ui/modal/index"; 
 
 interface Reservation {
   reservationId: number;
@@ -32,7 +32,7 @@ interface Reservation {
   };
   startDate: string;
   endDate: string;
-  barcode: string | null; // Base64 條形碼
+  barcode: string | null; 
 }
 
 export default function BasicTableOne() {
@@ -45,13 +45,12 @@ export default function BasicTableOne() {
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
   const [showDialog, setShowDialog] = useState<boolean>(false);
 
-  // 加载当前用户的预约数据
   useEffect(() => {
     if (user) {
       axios
         .get(`http://localhost:8080/api/reservations/user/${user.userId}`)
         .then((response) => {
-          console.log("Fetched reservations:", response.data); // 打印后端返回的数据
+          console.log("Fetched reservations:", response.data);
           setReservations(response.data);
         })
         .catch((error) => {
@@ -60,23 +59,21 @@ export default function BasicTableOne() {
     }
   }, [user]);
 
-  // 删除预约
   const handleDelete = (reservationId: number) => {
-    if (window.confirm("確定要刪除此預約嗎？")) {
+    if (window.confirm("Are you sure you want to delete this reservation?")) {
       axios
         .delete(`http://localhost:8080/api/reservations/${reservationId}`)
         .then(() => {
           setReservations(reservations.filter((res) => res.reservationId !== reservationId));
-          alert("預約已刪除！");
+          alert("Reservation deleted!");
         })
         .catch((error) => {
           console.error("Error deleting reservation:", error);
-          alert("刪除預約失敗！");
+          alert("Failed to delete reservation!");
         });
     }
   };
 
-  // 打開編輯對話框
   const openEditDialog = (reservation: Reservation) => {
     setSelectedReservation(reservation);
     setStartDate(new Date(reservation.startDate));
@@ -86,12 +83,10 @@ export default function BasicTableOne() {
     setShowDialog(true);
   };
 
-  // 關閉編輯對話框
   const closeDialog = () => {
     setShowDialog(false);
   };
 
-  // 更新預約
   const handleEdit = async () => {
     if (selectedStartDate && selectedEndDate && selectedReservation) {
       const formattedStartDate = format(selectedStartDate, "yyyy-MM-dd");
@@ -102,7 +97,7 @@ export default function BasicTableOne() {
       };
 
       if (!isValidDateRange(selectedStartDate, selectedEndDate)) {
-        alert("結束時間不能早於起始時間！");
+        alert("End time cannot be earlier than start time!");
         return;
       }
       setStartDate(selectedStartDate);
@@ -127,16 +122,15 @@ export default function BasicTableOne() {
               : reservation
           )
         );
-        alert("預約已更新！");
+        alert("Reservation updated!");
         closeDialog();
       } catch (error) {
         console.error("Error updating reservation:", error);
-        alert("更新預約失敗！");
+        alert("Failed to update reservation!");
       }
     }
   };
 
-  // 處理開始日期改變時的邏輯
   const handleStartDateChange = (date: Date | null) => {
     if (date) {
       setSelectedStartDate(date);
@@ -146,7 +140,6 @@ export default function BasicTableOne() {
     }
   };
 
-  // 處理結束日期改變時的邏輯
   const handleEndDateChange = (date: Date | null) => {
     if (date) {
       setSelectedEndDate(date);
@@ -186,7 +179,6 @@ export default function BasicTableOne() {
                       (() => {
                         const endDate = new Date(reservation.endDate);
                         const today = new Date();
-                        // 將時間部分設為0，只比較日期
                         endDate.setHours(0, 0, 0, 0);
                         today.setHours(0, 0, 0, 0);
                         
@@ -198,7 +190,7 @@ export default function BasicTableOne() {
                         });
                         
                         return endDate < today ? (
-                          <span className="text-red-500">已過期</span>
+                          <span className="text-red-500">Expired</span>
                         ) : (
                           <div className="relative">
                             <button
@@ -209,15 +201,15 @@ export default function BasicTableOne() {
                                 if (barcodeImg && button) {
                                   barcodeImg.classList.toggle('hidden');
                                   if (barcodeImg.classList.contains('hidden')) {
-                                    button.innerText = '顯示條碼';
+                                    button.innerText = 'Show Barcode';
                                   } else {
-                                    button.innerText = '隱藏條碼';
+                                    button.innerText = 'Hide Barcode';
                                   }
                                 }
                               }}
                               id={`barcode-button-${reservation.reservationId}`}
                             >
-                              顯示條碼
+                              Show Barcode
                             </button>
                             <img
                               id={`barcode-${reservation.reservationId}`}
@@ -254,7 +246,7 @@ export default function BasicTableOne() {
                           : "bg-red-500 text-white hover:bg-red-600"
                       }`}
                     >
-                      刪除
+                      Delete
                     </button>
                     <button
                       onClick={() => openEditDialog(reservation)}
@@ -277,7 +269,7 @@ export default function BasicTableOne() {
                           : "bg-blue-500 text-white hover:bg-blue-600"
                       }`}
                     >
-                      更新
+                      Update
                     </button>
                   </TableCell>
                 </TableRow>
@@ -287,21 +279,20 @@ export default function BasicTableOne() {
         </div>
       </div>
 
-      {/* 使用 Modal 替代對話框 */}
       <Modal isOpen={showDialog} onClose={closeDialog} className="max-w-[700px] m-4">
         <div className="relative w-full max-w-[700px] rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
           <div className="px-2 pr-14">
             <h3 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              更新預約
+              Update Reservation
             </h3>
             <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              調整日期只能在原始選擇的範圍內
+              Adjusting dates can only be done within the originally selected range
             </p>
           </div>
           <form className="flex flex-col">
             <div className="px-2 pb-3">
               <div className="grid grid-cols-1 gap-x-3 gap-y-5 lg:grid-cols-2">
-                <div><label >開始日期&nbsp;&nbsp;</label>
+                <div><label>Start Date:</label>
                   <DatePicker
                     selected={selectedStartDate}
                     onChange={handleStartDateChange}
@@ -311,7 +302,7 @@ export default function BasicTableOne() {
                     className="block w-full p-2 text-center text-gray-700 border border-gray-300 rounded-md"
                   />
                 </div>
-                <div><label>結束日期&nbsp;&nbsp;</label>
+                <div><label>End Date:</label>
                   <DatePicker
                     selected={selectedEndDate}
                     onChange={handleEndDateChange}
@@ -329,7 +320,7 @@ export default function BasicTableOne() {
                 type="button"
                 className="mt-4 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg"
               >
-                更新
+                Update
               </button>
             </div>
           </form>

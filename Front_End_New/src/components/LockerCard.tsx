@@ -45,12 +45,12 @@ const LockerCard: React.FC<LockerCardProps> = ({
           capacity: editedCapacity
         });
         if (response.status === 200) {
-          alert('更新成功！');
+          alert('Update successful!');
           window.location.reload();
         }
       } catch (error) {
-        console.error('更新失敗：', error);
-        alert('更新失敗，請稍後再試！');
+        console.error('Update failed:', error);
+        alert('Update failed, please try again later!');
       }
     }
     setIsEditing(!isEditing);
@@ -67,12 +67,12 @@ const LockerCard: React.FC<LockerCardProps> = ({
         status: 'available'
       });
       if (response.status === 200) {
-        alert('新增櫃位成功！');
+        alert('New locker added successfully!');
         window.location.reload();
       }
     } catch (error) {
-      console.error('新增失敗：', error);
-      alert('新增失敗，請稍後再試！');
+      console.error('Add failed:', error);
+      alert('Add failed, please try again later!');
     }
   };
 
@@ -99,8 +99,8 @@ const LockerCard: React.FC<LockerCardProps> = ({
               onChange={(e) => setEditedStatus(e.target.value)}
               className="px-2 py-1 rounded text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="available">可預約</option>
-              <option value="unavailable">不可預約</option>
+              <option value="available">Available</option>
+              <option value="unavailable">Unavailable</option>
             </select>
           ) : (
             <span className={`px-2 py-1 rounded text-sm ${
@@ -112,9 +112,9 @@ const LockerCard: React.FC<LockerCardProps> = ({
             }`}>
               {locker.usability
                 ? locker.status === "available"
-                  ? "可預約"
-                  : "不可預約"
-                : "無櫃位"}
+                  ? "Available"
+                  : "Unavailable"
+                : "No Locker"}
             </span>
           )}
         </div>
@@ -140,7 +140,7 @@ const LockerCard: React.FC<LockerCardProps> = ({
                   min="0"
                 />
               ) : (
-                <span className="text-sm text-gray-600">容量: {locker.capacity}</span>
+                <span className="text-sm text-gray-600">Capacity: {locker.capacity}</span>
               )}
             </div>
             <div className="flex items-start space-x-2">
@@ -148,7 +148,7 @@ const LockerCard: React.FC<LockerCardProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
               <div className="flex flex-col">
-                <span className="text-sm text-gray-600">備註:</span>
+                <span className="text-sm text-gray-600">Memo:</span>
                 {isEditing ? (
                   <textarea
                     value={editedMemo}
