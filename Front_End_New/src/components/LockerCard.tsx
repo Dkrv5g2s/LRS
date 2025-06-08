@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import axios from 'axios';
 import { Modal } from './ui/modal';
+
+interface User {
+  userId: number;
+  accountName: string | null;
+  phoneNumber: string | null;
+}
 
 interface Locker {
   lockerId: number;
@@ -21,6 +27,7 @@ interface LockerCardProps {
   refCallback: (el: HTMLDivElement | null) => void;
   startDate: Date | null;
   endDate: Date | null;
+  fetchLockerStatus: (start: Date, end: Date) => void;
 }
 
 const LockerCard: React.FC<LockerCardProps> = ({
@@ -32,13 +39,20 @@ const LockerCard: React.FC<LockerCardProps> = ({
   refCallback,
   startDate,
   endDate,
+  fetchLockerStatus,
 }) => {
   const { user } = useUser();
   const isAdmin = user?.isAdmin;
   const [showModal, setShowModal] = useState(false);
+  const [showReserveModal, setShowReserveModal] = useState(false);
   const [editedStatus, setEditedStatus] = useState(locker.status);
   const [editedMemo, setEditedMemo] = useState(locker.memo);
   const [editedCapacity, setEditedCapacity] = useState(locker.capacity);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const formatDate = (date: Date): string => {
     const yyyy = date.getFullYear();
@@ -69,7 +83,9 @@ const LockerCard: React.FC<LockerCardProps> = ({
       });
       if (response.status === 200) {
         alert('Update successful!');
-        window.location.reload();
+        if (startDate && endDate) {
+          fetchLockerStatus(startDate, endDate);
+        }
       }
     } catch (error) {
       console.error('Update failed:', error);
@@ -88,7 +104,9 @@ const LockerCard: React.FC<LockerCardProps> = ({
       });
       if (response.status === 200) {
         alert('New locker added successfully!');
-        window.location.reload();
+        if (startDate && endDate) {
+          fetchLockerStatus(startDate, endDate);
+        }
       }
     } catch (error) {
       console.error('Add failed:', error);
@@ -103,7 +121,9 @@ const LockerCard: React.FC<LockerCardProps> = ({
         const response = await axios.delete(`http://localhost:8080/api/lockers/${locker.lockerId}`);
         if (response.status === 200) {
           alert('Locker deleted successfully!');
-          window.location.reload();
+          if (startDate && endDate) {
+            fetchLockerStatus(startDate, endDate);
+          }
         }
       } catch (error) {
         console.error('Delete failed:', error);
@@ -112,11 +132,63 @@ const LockerCard: React.FC<LockerCardProps> = ({
     }
   };
 
+  const searchUsers = async (query: string) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/api/reservations/admin/users/search?query=${query}`);
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setUsers([]);
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+    
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      searchUsers(query);
+    }, 300);
+  };
+
+  const handleUserSelect = (user: User) => {
+    setSelectedUser(user);
+    setUsers([]);
+  };
+
+  const handleReserveForUser = async () => {
+    if (!selectedUser || !startDate || !endDate) return;
+    
+    try {
+      const response = await axios.post(`http://localhost:8080/api/reservations/admin`, {
+        lockerId: locker.lockerId,
+        userId: selectedUser.userId,
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate)
+      });
+      
+      if (response.status === 200) {
+        alert('Reservation successful!');
+        fetchLockerStatus(startDate, endDate);
+        setShowReserveModal(false);
+        setSelectedUser(null);
+        setSearchQuery('');
+      }
+    } catch (error) {
+      console.error('Error making reservation:', error);
+      alert('Reservation failed, please try again later!');
+    }
+  };
+
   return (
     <>
       <div
         ref={refCallback}
-        className={`relative p-4 rounded-lg ${
+        className={`p-4 rounded-lg flex flex-col justify-between min-h-[140px] ${
           locker.usability
             ? locker.status === "available"
               ? "bg-emerald-100"
@@ -126,7 +198,7 @@ const LockerCard: React.FC<LockerCardProps> = ({
         onMouseEnter={() => onMouseEnter(locker, index)}
         onMouseLeave={onMouseLeave}
       >
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col space-y-2 flex-grow">
           <div className="flex justify-between items-center">
             <span className="text-lg font-medium">{locker.site}</span>
             <span className={`px-2 py-1 rounded text-sm ${
@@ -152,30 +224,58 @@ const LockerCard: React.FC<LockerCardProps> = ({
                 <span className="text-sm text-gray-600">Capacity: {locker.capacity}</span>
               </div>
               <div className="flex items-start space-x-2">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-500 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                 </svg>
-                <div className="flex flex-col">
+                <div className="flex flex-col w-full">
                   <span className="text-sm text-gray-600">Memo:</span>
-                  <span className="text-sm text-gray-600 ml-7">{locker.memo}</span>
+                  <div className={`text-sm text-gray-600 mt-1 h-20 overflow-y-auto whitespace-pre-line p-1 ${
+                    locker.usability
+                      ? locker.status === "available"
+                        ? "bg-emerald-50"
+                        : "bg-red-50"
+                      : "bg-gray-100"
+                  }`}>
+                    {locker.memo.split('\n').map((line, index) => (
+                      <div key={index}>
+                        {line}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           )}
         </div>
-        <div className="absolute bottom-2 right-2 flex space-x-2">
+        <div className="flex space-x-2 mt-3 self-end">
           {locker.usability && locker.status === "available" && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onLockerClick(locker, index);
-              }}
-              className="p-1.5 rounded-full text-blue-600 hover:text-blue-800"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </button>
+            <>
+              {isAdmin ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowReserveModal(true);
+                  }}
+                  className="p-1.5 rounded-full text-blue-600 hover:text-blue-800"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLockerClick(locker, index);
+                  }}
+                  className="p-1.5 rounded-full text-blue-600 hover:text-blue-800"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              )}
+            </>
           )}
           {isAdmin && locker.status !== "unavailable" && (
             <>
@@ -287,6 +387,93 @@ const LockerCard: React.FC<LockerCardProps> = ({
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={showReserveModal}
+        onClose={() => {
+          setShowReserveModal(false);
+          setSelectedUser(null);
+          setSearchQuery('');
+        }}
+        className="max-w-[500px] m-4 p-4 lg:p-11"
+      >
+        <div className="px-2 pr-14">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
+              Admin Reservation
+            </h3>
+            {startDate && endDate && (
+              <span className="text-sm text-gray-500">
+                {formatDate(startDate)} - {formatDate(endDate)}
+              </span>
+            )}
+          </div>
+          <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
+            {locker.site}
+          </p>
+        </div>
+
+        <div className="px-2 pb-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full p-2 text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search users by name"
+            />
+            {users.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 top-full bg-white rounded-md shadow-lg max-h-60 overflow-auto">
+                {users.map((user) => {
+                  return (
+                    <div
+                      key={user.userId}
+                      onClick={() => handleUserSelect(user)}
+                      className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                    >
+                      <div className="font-medium">{user.accountName}</div>
+                      <div className="text-sm text-gray-500">{user.phoneNumber}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {selectedUser && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-md">
+              <div className="text-sm text-gray-600">Selected User:</div>
+              <div className="mt-1">
+                <div className="font-medium">{selectedUser.accountName}</div>
+                <div className="text-sm text-gray-500">{selectedUser.phoneNumber}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="text-right">
+          <button
+            onClick={() => {
+              setShowReserveModal(false);
+              setSelectedUser(null);
+              setSearchQuery('');
+            }}
+            type="button"
+            className="mt-4 px-6 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg mr-2 hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleReserveForUser}
+            type="button"
+            disabled={!selectedUser}
+            className={`mt-4 px-6 py-2.5 text-sm font-medium text-white rounded-lg ${
+              selectedUser ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
+            }`}
+          >
+            Make Reservation
+          </button>
+        </div>
       </Modal>
     </>
   );

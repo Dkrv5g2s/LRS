@@ -48,14 +48,6 @@ const LockerGrid = () => {
     } catch (error) {
       console.error("Error fetching locker status:", error);
       alert("Query failed, please try again later!");
-  
-      // 當錯誤發生時將日期回復為當前日期並重新查詢
-      const today = new Date();
-      setStartDate(today);
-      setEndDate(today);
-  
-      // 重新發送查詢請求
-      fetchLockerStatus(today, today);
     }
   };
 
@@ -190,6 +182,7 @@ const LockerGrid = () => {
                 }}
                 startDate={startDate}
                 endDate={endDate}
+                fetchLockerStatus={fetchLockerStatus}
               />
             ))}
           </div>
@@ -212,6 +205,7 @@ const LockerGrid = () => {
                 }}
                 startDate={startDate}
                 endDate={endDate}
+                fetchLockerStatus={fetchLockerStatus}
               />
             ))}
           </div>
