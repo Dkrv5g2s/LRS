@@ -53,7 +53,7 @@ class ReservationControllerTest {
 
     private Reservation fakeReservation(Locker l, User u, LocalDate s, LocalDate e) {
         Reservation r = new Reservation(l, u, s, e);
-        r.setReservationId(10L);
+        r.setId(10L);
         return r;
     }
 

@@ -9,8 +9,8 @@ import java.time.LocalDate;
 @Data
 public class ReservationRequest {
 
-    private long lockerId;
-    private long userId;
+    private Long lockerId;
+    private Long userId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate startDate;

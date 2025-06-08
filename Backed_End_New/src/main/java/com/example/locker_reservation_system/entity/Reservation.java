@@ -7,12 +7,14 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity @Getter @Setter @NoArgsConstructor
 public class Reservation {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long reservationId;
+    @Column(name = "reservation_id")
+    private Long id;
 
     @ManyToOne @JoinColumn(name = "locker_id", nullable = false)
     private Locker locker;
@@ -21,9 +23,11 @@ public class Reservation {
     private User user;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @Column(name = "start_date")
     private LocalDate startDate;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @Column(name = "end_date")
     private LocalDate endDate;
 
     @Lob
@@ -56,7 +60,7 @@ public class Reservation {
 
     /* 調整日期 */
     public void reschedule(LocalDate newStart, LocalDate newEnd) {
-        if (newStart.isAfter(newEnd)) throw new IllegalArgumentException("start > end");
+        if (newStart.isAfter(newEnd)) throw new IllegalArgumentException("Start date must be before or equal to end date");
         
         // 先釋放原日期
         locker.release(startDate, endDate);
@@ -78,7 +82,7 @@ public class Reservation {
     @Override
     public String toString() {
         return "Reservation{" +
-                "reservationId=" + reservationId +
+                "id=" + id +
                 ", locker=" + locker +
                 ", user=" + user +
                 ", startDate=" + startDate +
