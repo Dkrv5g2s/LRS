@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Entity @Data @NoArgsConstructor
 public class User {
@@ -60,6 +61,36 @@ public class User {
         Reservation r = new Reservation(locker, this, start, end);
         reservations.add(r);
         return r;
+    }
+
+    /** 取消指定ID的預約 */
+    public void cancelReservation(Long reservationId) {
+        Optional<Reservation> reservationOptional = this.reservations.stream()
+                .filter(r -> r.getId().equals(reservationId))
+                .findFirst();
+
+        if (reservationOptional.isPresent()) {
+            Reservation reservation = reservationOptional.get();
+            reservation.cancel(); // 调用Reservation实体的方法取消
+            this.reservations.remove(reservation);
+        } else {
+            throw new RuntimeException("Reservation with ID " + reservationId + " not found for this user.");
+        }
+    }
+
+    /** 更新指定ID預約的日期 */
+    public Reservation updateReservationDates(Long reservationId, LocalDate newStart, LocalDate newEnd) {
+        Optional<Reservation> reservationOptional = this.reservations.stream()
+                .filter(r -> r.getId().equals(reservationId))
+                .findFirst();
+
+        if (reservationOptional.isPresent()) {
+            Reservation reservation = reservationOptional.get();
+            reservation.reschedule(newStart, newEnd); // 调用Reservation实体的方法重新安排日期
+            return reservation;
+        } else {
+            throw new RuntimeException("Reservation with ID " + reservationId + " not found for this user.");
+        }
     }
 
     @Override

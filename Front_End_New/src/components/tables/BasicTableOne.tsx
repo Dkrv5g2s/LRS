@@ -16,7 +16,7 @@ import { zhTW } from "date-fns/locale";
 import { Modal } from "../../components/ui/modal/index"; 
 
 interface Reservation {
-  reservationId: number;
+  id: number;
   locker: {
     lockerId: number;
     site: string;
@@ -59,12 +59,12 @@ export default function BasicTableOne() {
     }
   }, [user]);
 
-  const handleDelete = (reservationId: number) => {
+  const handleDelete = (id: number) => {
     if (window.confirm("Are you sure you want to delete this reservation?")) {
       axios
-        .delete(`http://localhost:8080/api/reservations/${reservationId}`)
+        .delete(`http://localhost:8080/api/reservations/${id}`)
         .then(() => {
-          setReservations(reservations.filter((res) => res.reservationId !== reservationId));
+          setReservations(reservations.filter((res) => res.id !== id));
           alert("Reservation deleted!");
         })
         .catch((error) => {
@@ -105,7 +105,7 @@ export default function BasicTableOne() {
 
       try {
         const response = await axios.put(
-          `http://localhost:8080/api/reservations/${selectedReservation.reservationId}/dates`,
+          `http://localhost:8080/api/reservations/${selectedReservation.id}/dates`,
           null,
           {
             params: {
@@ -117,7 +117,7 @@ export default function BasicTableOne() {
         console.log("Reservation updated:", response.data);
         setReservations(
           reservations.map((reservation) =>
-            reservation.reservationId === selectedReservation.reservationId
+            reservation.id === selectedReservation.id
               ? { ...reservation, startDate: formattedStartDate, endDate: formattedEndDate }
               : reservation
           )
@@ -168,7 +168,7 @@ export default function BasicTableOne() {
 
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {reservations.map((reservation) => (
-                <TableRow key={reservation.reservationId}>
+                <TableRow key={reservation.id}>
                   <TableCell className="px-5 py-4 sm:px-6 text-start">{reservation.locker.site}</TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{reservation.locker.capacity}</TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">{reservation.locker.usability ? "Yes" : "No"}</TableCell>
@@ -196,8 +196,8 @@ export default function BasicTableOne() {
                             <button
                               className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
                               onClick={() => {
-                                const barcodeImg = document.getElementById(`barcode-${reservation.reservationId}`);
-                                const button = document.getElementById(`barcode-button-${reservation.reservationId}`);
+                                const barcodeImg = document.getElementById(`barcode-${reservation.id}`);
+                                const button = document.getElementById(`barcode-button-${reservation.id}`);
                                 if (barcodeImg && button) {
                                   barcodeImg.classList.toggle('hidden');
                                   if (barcodeImg.classList.contains('hidden')) {
@@ -207,12 +207,12 @@ export default function BasicTableOne() {
                                   }
                                 }
                               }}
-                              id={`barcode-button-${reservation.reservationId}`}
+                              id={`barcode-button-${reservation.id}`}
                             >
                               Show Barcode
                             </button>
                             <img
-                              id={`barcode-${reservation.reservationId}`}
+                              id={`barcode-${reservation.id}`}
                               src={`data:image/png;base64,${reservation.barcode}`}
                               alt="Reservation Barcode"
                               className="w-[300px] h-[150px] hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
@@ -226,7 +226,7 @@ export default function BasicTableOne() {
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     <button
-                      onClick={() => handleDelete(reservation.reservationId)}
+                      onClick={() => handleDelete(reservation.id)}
                       disabled={(() => {
                         const endDate = new Date(reservation.endDate);
                         const today = new Date();

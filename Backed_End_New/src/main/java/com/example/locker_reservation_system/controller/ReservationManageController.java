@@ -33,7 +33,7 @@ public class ReservationManageController {
     /* ===== 新增預約 ===== */
     @PostMapping
     @Transactional
-    public Reservation reserveByAdmin(@RequestBody ReservationRequest req) {
+    public Reservation reserveForUser(@RequestBody ReservationRequest req) {
         // 驗證被預約用戶
         User user = userRepo.findById(req.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -48,7 +48,7 @@ public class ReservationManageController {
 
     /* ===== 依使用者查詢 ===== */
     @GetMapping("/{userId}")
-    public List<Reservation> getReservationsByUserId(@PathVariable Long userId) {
+    public List<Reservation> getReservationsForUser(@PathVariable Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return user.getReservations();
@@ -57,24 +57,25 @@ public class ReservationManageController {
     /* ===== 修改日期 ===== */
     @PutMapping("/{id}/dates")
     @Transactional
-    public Reservation updateReservationDates(@PathVariable Long id,
+    public Reservation updateReservationDateForUser(@PathVariable Long id,
                                               @RequestParam("newStartDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newStart,
                                               @RequestParam("newEndDate")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newEnd) {
 
-        Reservation r = reservationRepo.findById(id)
+        Reservation reservation = reservationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        r.reschedule(newStart, newEnd);
-        return r;
+        User user = reservation.getUser(); // Get the user associated with the reservation
+        return user.updateReservationDates(id, newStart, newEnd); // Delegate to user's method
     }
 
     /* ===== 取消 ===== */
     @DeleteMapping("/{id}")
     @Transactional
-    public void cancel(@PathVariable Long id) {
-        Reservation r = reservationRepo.findById(id)
+    public void cancelReservationForUser(@PathVariable Long id) {
+        Reservation reservation = reservationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
-        r.cancel();
-        reservationRepo.delete(r);          // 仍需呼叫以產生 delete SQL
+        User user = reservation.getUser(); // Get the user associated with the reservation
+        user.cancelReservation(id); // Delegate to user's method
+        // The `reservationRepo.delete(r)` call is now handled within the User's cancelReservation method.
     }
 }

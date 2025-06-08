@@ -59,28 +59,22 @@ public class ReservationController {
                                    @RequestParam("newStartDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newStart,
                                    @RequestParam("newEndDate")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newEnd) {
 
-        Reservation r = reservationRepo.findById(id)
+        Reservation reservation = reservationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        r.reschedule(newStart, newEnd);
-        return r;
+        User user = reservation.getUser(); // Get the user associated with the reservation
+        return user.updateReservationDates(id, newStart, newEnd); // Delegate to user's method
     }
 
     /* ===== 取消 ===== */
     @DeleteMapping("/{id}")
     @Transactional
     public void cancel(@PathVariable Long id) {
-        Reservation r = reservationRepo.findById(id)
+        Reservation reservation = reservationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
-        r.cancel();
-        reservationRepo.delete(r);          // 仍需呼叫以產生 delete SQL
+        User user = reservation.getUser(); // Get the user associated with the reservation
+        user.cancelReservation(id); // Delegate to user's method
+        // The `reservationRepo.delete(r)` call is now handled within the User's cancelReservation method.
     }
-
-//    /* ===== 管理員預約 ===== */
-//    @PostMapping("/admin")
-//    @Transactional
-//    public Reservation adminReserve(@RequestBody ReservationRequest req) {
-//        // 與一般 reserve 相同，只是路徑不同（可再加 @PreAuthorize）
-//        return reserve(req);
-//    }
+    
 }
