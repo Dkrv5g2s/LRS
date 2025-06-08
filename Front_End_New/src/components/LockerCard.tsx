@@ -315,7 +315,7 @@ const LockerCard: React.FC<LockerCardProps> = ({
       <Modal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)} 
-        className="max-w-[700px] m-4 p-4 lg:p-11"
+        className="max-w-[800px] m-4 p-4 lg:p-11"
       >
         <div className="px-2 pr-14">
           <div className="flex justify-between items-center mb-2">
@@ -323,7 +323,7 @@ const LockerCard: React.FC<LockerCardProps> = ({
               {locker.usability ? `Edit Locker ${locker.lockerId}` : 'Add New Locker'}
             </h3>
             {locker.usability && startDate && endDate && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 whitespace-nowrap">
                 {formatDate(startDate)} - {formatDate(endDate)}
               </span>
             )}
@@ -397,7 +397,7 @@ const LockerCard: React.FC<LockerCardProps> = ({
           setSelectedUser(null);
           setSearchQuery('');
         }}
-        className="max-w-[500px] m-4 p-4 lg:p-11"
+        className="max-w-[600px] m-4 p-4 lg:p-11"
       >
         <div className="px-2 pr-14">
           <div className="flex justify-between items-center mb-2">
@@ -405,7 +405,7 @@ const LockerCard: React.FC<LockerCardProps> = ({
               Admin Reservation
             </h3>
             {startDate && endDate && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 whitespace-nowrap">
                 {formatDate(startDate)} - {formatDate(endDate)}
               </span>
             )}
@@ -442,7 +442,7 @@ const LockerCard: React.FC<LockerCardProps> = ({
             )}
           </div>
           {selectedUser && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-md">
+            <div className="mt-4 p-3 bg-blue-100 rounded-md">
               <div className="text-sm text-gray-600">Selected User:</div>
               <div className="mt-1">
                 <div className="font-medium">{selectedUser.accountName}</div>

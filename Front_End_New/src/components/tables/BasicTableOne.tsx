@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   Table,
@@ -14,6 +14,19 @@ import { useUser } from "../../context/UserContext";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale"; 
 import { Modal } from "../../components/ui/modal/index"; 
+
+interface User {
+  userId: number;
+  accountName: string | null;
+  phoneNumber: string | null;
+}
+
+interface Locker {
+  lockerId: number;
+  site: string;
+  capacity: number;
+  usability: boolean;
+}
 
 interface Reservation {
   id: number;
@@ -37,6 +50,7 @@ interface Reservation {
 
 export default function BasicTableOne() {
   const { user } = useUser();
+  const isAdmin = user?.isAdmin;
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -44,33 +58,98 @@ export default function BasicTableOne() {
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
   const [showDialog, setShowDialog] = useState<boolean>(false);
+  const [activeBarcodeId, setActiveBarcodeId] = useState<number | null>(null);
+
+  // Admin-specific state for searching users
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  const fetchReservations = async (targetUserId: number, adminUserId: number | undefined) => {
+    try {
+      let url = '';
+      if (isAdmin && adminUserId) {
+        url = `http://localhost:8080/api/reservations/admin/${targetUserId}?adminUserId=${adminUserId}`;
+      } else {
+        url = `http://localhost:8080/api/reservations/user/${targetUserId}`;
+      }
+      const response = await axios.get(url);
+      console.log("Fetched reservations:", response.data);
+      setReservations(response.data);
+    } catch (error) {
+      console.error("Error fetching reservations:", error);
+      setReservations([]);
+    }
+  };
 
   useEffect(() => {
-    if (user) {
-      axios
-        .get(`http://localhost:8080/api/reservations/user/${user.userId}`)
-        .then((response) => {
-          console.log("Fetched reservations:", response.data);
-          setReservations(response.data);
-        })
-        .catch((error) => {
-          console.error("Error fetching reservations:", error);
-        });
+    if (isAdmin && selectedCustomer) {
+      fetchReservations(selectedCustomer.userId, user?.userId);
+    } else if (!isAdmin && user) {
+      fetchReservations(user.userId, undefined);
+    } else if (isAdmin && !selectedCustomer) {
+        setReservations([]); // Clear reservations if no customer is selected by admin
     }
-  }, [user]);
+  }, [user, isAdmin, selectedCustomer]);
 
-  const handleDelete = (id: number) => {
+  const searchUsers = async (query: string) => {
+    if (!user?.userId) return; // Ensure adminUserId is available
+    try {
+      const response = await axios.get(`http://localhost:8080/api/reservations/admin/users/search?query=${query}&adminUserId=${user.userId}`);
+      setSearchResults(response.data);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setSearchResults([]);
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+    
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      searchUsers(query);
+    }, 300);
+  };
+
+  const handleCustomerSelect = (customer: User) => {
+    setSelectedCustomer(customer);
+    setSearchQuery(''); // Clear search query
+    setSearchResults([]); // Clear search results
+  };
+
+  const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this reservation?")) {
-      axios
-        .delete(`http://localhost:8080/api/reservations/${id}`)
-        .then(() => {
+      try {
+        let url = '';
+        if (isAdmin && user?.userId) {
+          url = `http://localhost:8080/api/reservations/admin/${id}?adminUserId=${user.userId}`;
+        } else if (user?.userId) {
+          url = `http://localhost:8080/api/reservations/${id}`;
+        } else {
+            alert('User not logged in or admin ID not available.');
+            return;
+        }
+
+        const response = await axios.delete(url);
+        if (response.status === 200) {
           setReservations(reservations.filter((res) => res.id !== id));
           alert("Reservation deleted!");
-        })
-        .catch((error) => {
-          console.error("Error deleting reservation:", error);
-          alert("Failed to delete reservation!");
-        });
+          if (isAdmin && selectedCustomer) {
+            fetchReservations(selectedCustomer.userId, user?.userId); // Refresh for admin
+          } else if (!isAdmin && user) {
+            fetchReservations(user.userId, undefined);
+          }
+        }
+      } catch (error) {
+        console.error("Error deleting reservation:", error);
+        alert("Failed to delete reservation!");
+      }
     }
   };
 
@@ -88,7 +167,7 @@ export default function BasicTableOne() {
   };
 
   const handleEdit = async () => {
-    if (selectedStartDate && selectedEndDate && selectedReservation) {
+    if (selectedStartDate && selectedEndDate && selectedReservation && user) {
       const formattedStartDate = format(selectedStartDate, "yyyy-MM-dd");
       const formattedEndDate = format(selectedEndDate, "yyyy-MM-dd");
 
@@ -104,8 +183,15 @@ export default function BasicTableOne() {
       setEndDate(selectedEndDate);
 
       try {
+        let url = '';
+        if (isAdmin && user.userId) {
+            url = `http://localhost:8080/api/reservations/admin/${selectedReservation.id}/dates?adminUserId=${user.userId}`;
+        } else {
+            url = `http://localhost:8080/api/reservations/${selectedReservation.id}/dates`;
+        }
+        
         const response = await axios.put(
-          `http://localhost:8080/api/reservations/${selectedReservation.id}/dates`,
+          url,
           null,
           {
             params: {
@@ -124,6 +210,11 @@ export default function BasicTableOne() {
         );
         alert("Reservation updated!");
         closeDialog();
+        if (isAdmin && selectedCustomer) {
+          fetchReservations(selectedCustomer.userId, user.userId); // Refresh for admin
+        } else if (!isAdmin) {
+          fetchReservations(user.userId, undefined); // Refresh for regular user
+        }
       } catch (error) {
         console.error("Error updating reservation:", error);
         alert("Failed to update reservation!");
@@ -151,6 +242,46 @@ export default function BasicTableOne() {
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+      {isAdmin && (
+        <div className="p-5 border-b border-gray-200 dark:border-white/[0.05]">
+          {/* <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90 mb-4">Admin User Search</h2> */}
+          <div className="relative mb-4">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full p-2 text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search customers by name "
+            />
+            {searchResults.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 top-full bg-white rounded-md shadow-lg max-h-60 overflow-auto">
+                {searchResults.map((customer) => (
+                  <div
+                    key={customer.userId}
+                    onClick={() => handleCustomerSelect(customer)}
+                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                  >
+                    <div className="font-medium">{customer.accountName}</div>
+                    <div className="text-sm text-gray-500">{customer.phoneNumber}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {selectedCustomer && (
+            <div className="mt-4 p-3 bg-blue-100 rounded-md">
+              <div className="text-sm text-gray-600">Selected Customer:</div>
+              <div className="mt-1">
+                <div className="font-medium">{selectedCustomer.accountName}</div>
+                <div className="text-sm text-gray-500">{selectedCustomer.phoneNumber}</div>
+              </div>
+            </div>
+          )}
+          {/* {!selectedCustomer && (
+            <p className="text-gray-500">Please search for and select a customer to view their reservations.</p>
+          )} */}
+        </div>
+      )}
       <div className="max-w-full overflow-x-auto">
         <div className="min-w-[1102px]">
           <Table>
@@ -182,13 +313,6 @@ export default function BasicTableOne() {
                         endDate.setHours(0, 0, 0, 0);
                         today.setHours(0, 0, 0, 0);
                         
-                        console.log('Debug dates:', {
-                          reservationEndDate: reservation.endDate,
-                          parsedEndDate: endDate,
-                          today: today,
-                          isExpired: endDate < today
-                        });
-                        
                         return endDate < today ? (
                           <span className="text-red-500">Expired</span>
                         ) : (
@@ -196,27 +320,22 @@ export default function BasicTableOne() {
                             <button
                               className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
                               onClick={() => {
-                                const barcodeImg = document.getElementById(`barcode-${reservation.id}`);
-                                const button = document.getElementById(`barcode-button-${reservation.id}`);
-                                if (barcodeImg && button) {
-                                  barcodeImg.classList.toggle('hidden');
-                                  if (barcodeImg.classList.contains('hidden')) {
-                                    button.innerText = 'Show Barcode';
-                                  } else {
-                                    button.innerText = 'Hide Barcode';
-                                  }
+                                if (activeBarcodeId === reservation.id) {
+                                  setActiveBarcodeId(null);
+                                } else {
+                                  setActiveBarcodeId(reservation.id);
                                 }
                               }}
-                              id={`barcode-button-${reservation.id}`}
                             >
-                              Show Barcode
+                              {activeBarcodeId === reservation.id ? 'Hide Barcode' : 'Show Barcode'}
                             </button>
-                            <img
-                              id={`barcode-${reservation.id}`}
-                              src={`data:image/png;base64,${reservation.barcode}`}
-                              alt="Reservation Barcode"
-                              className="w-[300px] h-[150px] hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
-                            />
+                            {activeBarcodeId === reservation.id && (
+                              <img
+                                src={`data:image/png;base64,${reservation.barcode}`}
+                                alt="Reservation Barcode"
+                                className="w-[300px] h-[150px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+                              />
+                            )}
                           </div>
                         );
                       })()
@@ -227,24 +346,18 @@ export default function BasicTableOne() {
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     <button
                       onClick={() => handleDelete(reservation.id)}
-                      disabled={(() => {
+                      disabled={!isAdmin && (() => {
                         const endDate = new Date(reservation.endDate);
                         const today = new Date();
                         endDate.setHours(0, 0, 0, 0);
                         today.setHours(0, 0, 0, 0);
                         return endDate < today;
                       })()}
-                      className={`px-4 py-2 rounded mr-2 ${
-                        (() => {
-                          const endDate = new Date(reservation.endDate);
-                          const today = new Date();
-                          endDate.setHours(0, 0, 0, 0);
-                          today.setHours(0, 0, 0, 0);
-                          return endDate < today;
-                        })()
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-red-500 text-white hover:bg-red-600"
-                      }`}
+                      className={`px-4 py-2 rounded mr-2 ${((endDate, today) => {
+                        endDate.setHours(0,0,0,0);
+                        today.setHours(0,0,0,0);
+                        return (!isAdmin && endDate < today) ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-red-500 text-white hover:bg-red-600";
+                      })(new Date(reservation.endDate), new Date())}`}
                     >
                       Delete
                     </button>
@@ -257,17 +370,11 @@ export default function BasicTableOne() {
                         today.setHours(0, 0, 0, 0);
                         return endDate < today;
                       })()}
-                      className={`px-4 py-2 rounded mr-2 ${
-                        (() => {
-                          const endDate = new Date(reservation.endDate);
-                          const today = new Date();
-                          endDate.setHours(0, 0, 0, 0);
-                          today.setHours(0, 0, 0, 0);
-                          return endDate < today;
-                        })()
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-blue-500 text-white hover:bg-blue-600"
-                      }`}
+                      className={`px-4 py-2 rounded mr-2 ${((endDate, today) => {
+                        endDate.setHours(0,0,0,0);
+                        today.setHours(0,0,0,0);
+                        return (endDate < today) ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600";
+                      })(new Date(reservation.endDate), new Date())}`}
                     >
                       Update
                     </button>
