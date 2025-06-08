@@ -120,7 +120,7 @@ const LockerGrid = () => {
     if (startDate && endDate) {
       fetchLockerStatus(startDate, endDate);
     }
-  }, []); // 加入startDate和endDate作為依賴項
+  }, [startDate, endDate]); // 加入startDate和endDate作為依賴項
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -188,6 +188,8 @@ const LockerGrid = () => {
                 refCallback={(el) => {
                   lockerRefs.current[index] = el;
                 }}
+                startDate={startDate}
+                endDate={endDate}
               />
             ))}
           </div>
@@ -208,6 +210,8 @@ const LockerGrid = () => {
                 refCallback={(el) => {
                   lockerRefs.current[index + 10] = el;
                 }}
+                startDate={startDate}
+                endDate={endDate}
               />
             ))}
           </div>

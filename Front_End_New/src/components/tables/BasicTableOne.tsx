@@ -292,7 +292,7 @@ export default function BasicTableOne() {
           <form className="flex flex-col">
             <div className="px-2 pb-3">
               <div className="grid grid-cols-1 gap-x-3 gap-y-5 lg:grid-cols-2">
-                <div><label>Start Date:</label>
+                <div><label>Start Date</label>
                   <DatePicker
                     selected={selectedStartDate}
                     onChange={handleStartDateChange}
@@ -302,7 +302,7 @@ export default function BasicTableOne() {
                     className="block w-full p-2 text-center text-gray-700 border border-gray-300 rounded-md"
                   />
                 </div>
-                <div><label>End Date:</label>
+                <div><label>End Date</label>
                   <DatePicker
                     selected={selectedEndDate}
                     onChange={handleEndDateChange}

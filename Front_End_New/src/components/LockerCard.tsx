@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
 import axios from 'axios';
+import { Modal } from './ui/modal';
 
 interface Locker {
   lockerId: number;
@@ -18,6 +19,8 @@ interface LockerCardProps {
   onMouseEnter: (locker: Locker, index: number) => void;
   onMouseLeave: () => void;
   refCallback: (el: HTMLDivElement | null) => void;
+  startDate: Date | null;
+  endDate: Date | null;
 }
 
 const LockerCard: React.FC<LockerCardProps> = ({
@@ -27,44 +30,61 @@ const LockerCard: React.FC<LockerCardProps> = ({
   onMouseEnter,
   onMouseLeave,
   refCallback,
+  startDate,
+  endDate,
 }) => {
   const { user } = useUser();
   const isAdmin = user?.isAdmin;
-  const [isEditing, setIsEditing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editedStatus, setEditedStatus] = useState(locker.status);
   const [editedMemo, setEditedMemo] = useState(locker.memo);
   const [editedCapacity, setEditedCapacity] = useState(locker.capacity);
 
-  const handleEdit = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isEditing) {
-      try {
-        const response = await axios.put(`http://localhost:8080/api/lockers/${locker.lockerId}`, {
-          status: editedStatus,
-          memo: editedMemo,
-          capacity: editedCapacity
-        });
-        if (response.status === 200) {
-          alert('Update successful!');
-          window.location.reload();
-        }
-      } catch (error) {
-        console.error('Update failed:', error);
-        alert('Update failed, please try again later!');
-      }
-    }
-    setIsEditing(!isEditing);
+  const formatDate = (date: Date): string => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
   };
 
-  const handleAdd = async (e: React.MouseEvent) => {
+  const handleOpenModal = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!locker.usability) {
+      // Reset all fields when adding new locker
+      setEditedStatus('available');
+      setEditedMemo('');
+      setEditedCapacity(0);
+    }
+    setShowModal(true);
+  };
+
+  const handleEdit = async () => {
     try {
-      const response = await axios.post(`http://localhost:8080/api/lockers`, {
-        site: locker.site,
-        capacity: 0,
-        memo: '',
-        usability: true,
-        status: 'available'
+      const response = await axios.put(`http://localhost:8080/api/lockers/${locker.lockerId}`, {
+        status: editedStatus,
+        memo: editedMemo,
+        capacity: editedCapacity,
+        startDate: startDate ? formatDate(startDate) : null,
+        endDate: endDate ? formatDate(endDate) : null
+      });
+      if (response.status === 200) {
+        alert('Update successful!');
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Update failed:', error);
+      alert('Update failed, please try again later!');
+    }
+    setShowModal(false);
+  };
+
+  const handleAdd = async () => {
+    try {
+      const response = await axios.post(`http://localhost:8080/api/lockers`, null, {
+        params: {
+          lockerId: locker.lockerId,
+          capacity: editedCapacity
+        }
       });
       if (response.status === 200) {
         alert('New locker added successfully!');
@@ -74,35 +94,41 @@ const LockerCard: React.FC<LockerCardProps> = ({
       console.error('Add failed:', error);
       alert('Add failed, please try again later!');
     }
+    setShowModal(false);
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this locker?')) {
+      try {
+        const response = await axios.delete(`http://localhost:8080/api/lockers/${locker.lockerId}`);
+        if (response.status === 200) {
+          alert('Locker deleted successfully!');
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Delete failed:', error);
+        alert('Delete failed, please try again later!');
+      }
+    }
   };
 
   return (
-    <div
-      ref={refCallback}
-      className={`relative p-4 rounded-lg ${
-        locker.usability
-          ? locker.status === "available"
-            ? "bg-emerald-100"
-            : "bg-red-100"
-          : "bg-gray-200"
-      }`}
-      onClick={() => !isEditing && onLockerClick(locker, index)}
-      onMouseEnter={() => onMouseEnter(locker, index)}
-      onMouseLeave={onMouseLeave}
-    >
-      <div className="flex flex-col space-y-2">
-        <div className="flex justify-between items-center">
-          <span className="text-lg font-medium">{locker.site}</span>
-          {isEditing ? (
-            <select
-              value={editedStatus}
-              onChange={(e) => setEditedStatus(e.target.value)}
-              className="px-2 py-1 rounded text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="available">Available</option>
-              <option value="unavailable">Unavailable</option>
-            </select>
-          ) : (
+    <>
+      <div
+        ref={refCallback}
+        className={`relative p-4 rounded-lg ${
+          locker.usability
+            ? locker.status === "available"
+              ? "bg-emerald-100"
+              : "bg-red-100"
+            : "bg-gray-200"
+        }`}
+        onMouseEnter={() => onMouseEnter(locker, index)}
+        onMouseLeave={onMouseLeave}
+      >
+        <div className="flex flex-col space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-medium">{locker.site}</span>
             <span className={`px-2 py-1 rounded text-sm ${
               locker.usability
                 ? locker.status === "available"
@@ -116,79 +142,153 @@ const LockerCard: React.FC<LockerCardProps> = ({
                   : "Unavailable"
                 : "No Locker"}
             </span>
+          </div>
+          {locker.usability && (
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <span className="text-sm text-gray-600">Capacity: {locker.capacity}</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                </svg>
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-600">Memo:</span>
+                  <span className="text-sm text-gray-600 ml-7">{locker.memo}</span>
+                </div>
+              </div>
+            </div>
           )}
         </div>
-        {locker.usability && (
-          <div className="space-y-1">
-            {/* <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        <div className="absolute bottom-2 right-2 flex space-x-2">
+          {locker.usability && locker.status === "available" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onLockerClick(locker, index);
+              }}
+              className="p-1.5 rounded-full text-blue-600 hover:text-blue-800"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-sm text-gray-600">位置: {locker.site}</span>
-            </div> */}
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              {isEditing ? (
+            </button>
+          )}
+          {isAdmin && locker.status !== "unavailable" && (
+            <>
+              <button
+                onClick={handleOpenModal}
+                className="p-1.5 rounded-full text-gray-600 hover:text-gray-800"
+              >
+                {locker.usability ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                )}
+              </button>
+              {locker.usability && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                  className="p-1.5 rounded-full text-red-600 hover:text-red-800"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+        className="max-w-[700px] m-4 p-4 lg:p-11"
+      >
+        <div className="px-2 pr-14">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
+              {locker.usability ? `Edit Locker ${locker.lockerId}` : 'Add New Locker'}
+            </h3>
+            {locker.usability && startDate && endDate && (
+              <span className="text-sm text-gray-500">
+                {formatDate(startDate)} - {formatDate(endDate)}
+              </span>
+            )}
+          </div>
+          <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
+            {locker.site}
+          </p>
+        </div>
+        <form className="flex flex-col">
+          <div className="px-2 pb-3">
+            <div className="grid grid-cols-1 gap-x-3 gap-y-5 lg:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Capacity</label>
                 <input
                   type="number"
                   value={editedCapacity}
                   onChange={(e) => setEditedCapacity(Number(e.target.value))}
-                  className="text-sm text-gray-600 border border-gray-300 rounded px-2 py-1 w-20"
+                  className="mt-1 block w-full p-2 text-gray-700 border border-gray-300 rounded-md"
                   min="0"
                 />
-              ) : (
-                <span className="text-sm text-gray-600">Capacity: {locker.capacity}</span>
+              </div>
+              {locker.usability && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Status</label>
+                    <select
+                      value={editedStatus}
+                      onChange={(e) => setEditedStatus(e.target.value)}
+                      className="mt-1 block w-full p-2 text-gray-700 border border-gray-300 rounded-md"
+                    >
+                      <option value="available">Available</option>
+                      <option value="unavailable">Unavailable</option>
+                    </select>
+                  </div>
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">Memo</label>
+                    <textarea
+                      value={editedMemo}
+                      onChange={(e) => setEditedMemo(e.target.value)}
+                      className="mt-1 block w-full p-2 text-gray-700 border border-gray-300 rounded-md"
+                      rows={3}
+                    />
+                  </div>
+                </>
               )}
             </div>
-            <div className="flex items-start space-x-2">
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-              </svg>
-              <div className="flex flex-col">
-                <span className="text-sm text-gray-600">Memo:</span>
-                {isEditing ? (
-                  <textarea
-                    value={editedMemo}
-                    onChange={(e) => setEditedMemo(e.target.value)}
-                    className="ml-7 text-sm text-gray-600 border border-gray-300 rounded px-2 py-1"
-                    rows={2}
-                  />
-                ) : (
-                  <span className="text-sm text-gray-600 ml-7">{locker.memo}</span>
-                )}
-              </div>
-            </div>
           </div>
-        )}
-      </div>
-      {isAdmin && (
-        <div className="absolute bottom-2 right-2">
-          <button
-            onClick={locker.usability ? handleEdit : handleAdd}
-            className="p-1.5 rounded-full text-gray-600 hover:text-gray-800"
-          >
-            {locker.usability ? (
-              isEditing ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              )
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-              </svg>
-            )}
-          </button>
-        </div>
-      )}
-    </div>
+          <div className="text-right">
+            <button
+              onClick={() => setShowModal(false)}
+              type="button"
+              className="mt-4 px-6 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg mr-2 hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={locker.usability ? handleEdit : handleAdd}
+              type="button"
+              className="mt-4 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
+              {locker.usability ? 'Update' : 'Add'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 };
 
