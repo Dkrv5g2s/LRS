@@ -133,8 +133,9 @@ const LockerCard: React.FC<LockerCardProps> = ({
   };
 
   const searchUsers = async (query: string) => {
+    if (!user?.userId) return; // Ensure adminUserId is available
     try {
-      const response = await axios.get(`http://localhost:8080/api/reservations/admin/users/search?query=${query}`);
+      const response = await axios.get(`http://localhost:8080/api/reservations/admin/users/search?query=${query}&adminUserId=${user.userId}`);
       setUsers(response.data);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -161,10 +162,10 @@ const LockerCard: React.FC<LockerCardProps> = ({
   };
 
   const handleReserveForUser = async () => {
-    if (!selectedUser || !startDate || !endDate) return;
+    if (!selectedUser || !startDate || !endDate || !user?.userId) return;
     
     try {
-      const response = await axios.post(`http://localhost:8080/api/reservations/admin`, {
+      const response = await axios.post(`http://localhost:8080/api/reservations/admin?adminUserId=${user.userId}`, {
         lockerId: locker.lockerId,
         userId: selectedUser.userId,
         startDate: formatDate(startDate),

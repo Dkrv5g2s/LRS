@@ -26,32 +26,42 @@ public class ReservationManageController {
 
     /* ===== 查詢用戶 ===== */
     @GetMapping("/users/search")
-    public List<User> searchUsers(@RequestParam String query) {
-        return userRepo.findByAccountNameContainingIgnoreCase(query);
+    public List<User> searchUsers(@RequestParam String query, @RequestParam Long adminUserId) {
+        User adminUser = userRepo.findById(adminUserId)
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
+        return adminUser.adminSearchCustomers(query, userRepo);
     }
 
     /* ===== 新增預約 ===== */
     @PostMapping
     @Transactional
-    public Reservation reserveForUser(@RequestBody ReservationRequest req) {
-        // 驗證被預約用戶
-        User user = userRepo.findById(req.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public Reservation reserveForUser(@RequestBody ReservationRequest req, @RequestParam Long adminUserId) {
+        User adminUser = userRepo.findById(adminUserId)
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
 
-        // 驗證置物櫃
+        User targetUser = userRepo.findById(req.getUserId())
+                .orElseThrow(() -> new RuntimeException("Target User not found"));
         Locker locker = lockerRepo.findById(req.getLockerId())
                 .orElseThrow(() -> new RuntimeException("Locker not found"));
-
-        // 創建預約 (利用 User 實體的 reserve 方法，符合 OOAD)
-        return user.reserve(locker, req.getStartDate(), req.getEndDate());
+        
+        return adminUser.adminReserveLockerForUser(
+            targetUser,
+            locker,
+            req.getStartDate(),
+            req.getEndDate()
+        );
     }
 
     /* ===== 依使用者查詢 ===== */
     @GetMapping("/{userId}")
-    public List<Reservation> getReservationsForUser(@PathVariable Long userId) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return user.getReservations();
+    public List<Reservation> getReservationsForUser(@PathVariable Long userId, @RequestParam Long adminUserId) {
+        User adminUser = userRepo.findById(adminUserId)
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
+
+        User targetUser = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Target User not found"));
+
+        return adminUser.adminGetReservationsForUser(targetUser);
     }
 
     /* ===== 修改日期 ===== */
@@ -59,23 +69,27 @@ public class ReservationManageController {
     @Transactional
     public Reservation updateReservationDateForUser(@PathVariable Long id,
                                               @RequestParam("newStartDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newStart,
-                                              @RequestParam("newEndDate")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newEnd) {
+                                              @RequestParam("newEndDate")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newEnd,
+                                              @RequestParam Long adminUserId) {
+        User adminUser = userRepo.findById(adminUserId)
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
 
         Reservation reservation = reservationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
-
-        User user = reservation.getUser(); // Get the user associated with the reservation
-        return user.updateReservationDates(id, newStart, newEnd); // Delegate to user's method
+        
+        return adminUser.adminUpdateUserReservationDates(reservation, newStart, newEnd);
     }
 
     /* ===== 取消 ===== */
     @DeleteMapping("/{id}")
     @Transactional
-    public void cancelReservationForUser(@PathVariable Long id) {
+    public void cancelReservationForUser(@PathVariable Long id, @RequestParam Long adminUserId) {
+        User adminUser = userRepo.findById(adminUserId)
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
+
         Reservation reservation = reservationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
-        User user = reservation.getUser(); // Get the user associated with the reservation
-        user.cancelReservation(id); // Delegate to user's method
-        // The `reservationRepo.delete(r)` call is now handled within the User's cancelReservation method.
+
+        adminUser.adminCancelUserReservation(reservation, reservationRepo);
     }
 }
