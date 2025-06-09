@@ -14,15 +14,32 @@ export default function SignUpForm() {
   const [accountName, setAccountName] = useState("");
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const { setUser } = useUser();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log("送出的資料:", JSON.stringify({ accountName, password, phoneNumber }));
-
+    let newErrors: { [key: string]: string } = {};
+    // Required field validation
+    if (!accountName) newErrors.accountName = "Please enter your account name";
+    if (!password) newErrors.password = "Please enter your password";
+    if (!confirmPassword) newErrors.confirmPassword = "Please confirm your password";
+    if (!phoneNumber) newErrors.phoneNumber = "Please enter your phone number";
+    // Password match validation
+    if (password && confirmPassword && password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    // Phone number length validation
+    if (phoneNumber && phoneNumber.length !== 10) {
+      newErrors.phoneNumber = "Phone number must be 10 digits";
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+    setIsSubmitting(true);
     try {
       const response = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
@@ -31,21 +48,26 @@ export default function SignUpForm() {
         },
         body: JSON.stringify({ accountName, password, phoneNumber }),
       });
-
       if (response.ok) {
         const data = await response.json();
-        console.log("回傳的資料:", data);
-
-        localStorage.setItem('user', JSON.stringify(data)); // 儲存到 localStorage
-        setUser(data); // 設定使用者資訊
-
-        alert("註冊成功！"); // 顯示成功提示
-        router.push("/signin"); // 導向登入頁面
+        localStorage.setItem('user', JSON.stringify(data));
+        setUser(data);
+        alert("Registration successful!");
+        router.push("/signin");
+      } else if (response.status === 400) {
+        setErrors({ accountName: "Account name already exists" });
       } else {
-        console.error("註冊失敗，狀態碼:", response.status);
+        const errorData = await response.json();
+        if (errorData.message && errorData.message.includes("帳號")) {
+          setErrors({ accountName: "Account name already exists" });
+        } else {
+          alert("Registration failed, please try again later");
+        }
       }
     } catch (error) {
-      console.error("錯誤:", error);
+      alert("Registration failed, please check your network connection");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -82,6 +104,9 @@ export default function SignUpForm() {
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
                   />
+                  {errors.accountName && (
+                    <div className="text-error-500 text-xs mt-1">{errors.accountName}</div>
+                  )}
                 </div>
                 <div>
                   <Label>
@@ -105,6 +130,23 @@ export default function SignUpForm() {
                       )}
                     </span>
                   </div>
+                  {errors.password && (
+                    <div className="text-error-500 text-xs mt-1">{errors.password}</div>
+                  )}
+                </div>
+                <div>
+                  <Label>
+                    Confirm Password <span className="text-error-500">*</span>{" "}
+                  </Label>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Please confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  {errors.confirmPassword && (
+                    <div className="text-error-500 text-xs mt-1">{errors.confirmPassword}</div>
+                  )}
                 </div>
                 <div>
                   <Label>
@@ -115,11 +157,14 @@ export default function SignUpForm() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                   />
+                  {errors.phoneNumber && (
+                    <div className="text-error-500 text-xs mt-1">{errors.phoneNumber}</div>
+                  )}
                 </div>
 
                 <div>
-                  <Button className="w-full" size="sm" type="submit">
-                    Sign up
+                  <Button className="w-full" size="sm" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Registering..." : "Sign up"}
                   </Button>
                 </div>
               </div>
