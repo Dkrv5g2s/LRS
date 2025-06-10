@@ -150,12 +150,5 @@ public class User {
         reservationRepo.delete(reservation); // Delete from the database
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "userId=" + userId +
-                ", accountName='" + accountName + '\'' +
-                ", phoneNumber='" + phoneNumber + '\'' +
-                '}';
-    }
+
 }

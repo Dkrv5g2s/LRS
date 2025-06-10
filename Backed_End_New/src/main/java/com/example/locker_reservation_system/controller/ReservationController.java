@@ -74,7 +74,7 @@ public class ReservationController {
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
         User user = reservation.getUser(); // Get the user associated with the reservation
         user.cancelReservation(id); // Delegate to user's method
-        // The `reservationRepo.delete(r)` call is now handled within the User's cancelReservation method.
+        reservationRepo.delete(reservation); // Delete from the database
     }
     
 }

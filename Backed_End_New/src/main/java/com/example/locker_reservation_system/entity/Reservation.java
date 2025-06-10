@@ -54,7 +54,7 @@ public class Reservation {
 
     /* 重新產生條碼 (給 reschedule 用) */
     public void regenerateBarcode() {
-        String raw = locker.getLockerId() + "-" + user.getUserId() + "-" + startDate + "-" + endDate;
+        String raw = locker.getLockerId() + "-" + user.getUserId() + "-" + startDate + "-" + endDate + "-" + System.currentTimeMillis();
         this.barcode = com.example.locker_reservation_system.util.BarcodeUtil.generateBase64(raw);
     }
 

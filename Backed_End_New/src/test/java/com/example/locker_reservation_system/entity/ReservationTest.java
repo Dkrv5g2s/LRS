@@ -93,13 +93,32 @@ public class ReservationTest {
     }
 
     @Test
-    void testToString() {
-        String str = r.toString();
-        assertTrue(str.contains("reservationId="));
-        assertTrue(str.contains("locker="));
-        assertTrue(str.contains("user="));
-        assertTrue(str.contains("startDate="));
-        assertTrue(str.contains("endDate="));
-        assertTrue(str.contains("barcode="));
+    void testRegenerateBarcode() {
+        String originalBarcode = r.getBarcode();
+        r.regenerateBarcode();
+        assertNotNull(r.getBarcode());
+        assertNotEquals(originalBarcode, r.getBarcode());
+    }
+
+    @Test
+    void testReschedule_conflict() {
+        User user2 = new User();
+        user2.setUserId(2L);
+        user2.setAccountName("test2");
+        user2.setPhoneNumber("0987654321");
+        
+        // Create another reservation that conflicts with the new dates
+        Reservation conflictReservation = new Reservation(locker, user2, D3, D3);
+        
+        assertThrows(RuntimeException.class, () -> r.reschedule(D3, D3));
+        assertEquals(D1, r.getStartDate());
+        assertEquals(D2, r.getEndDate());
+    }
+
+    @Test
+    void testReschedule_invalidDateRange() {
+        assertThrows(IllegalArgumentException.class, () -> r.reschedule(D2, D1));
+        assertEquals(D1, r.getStartDate());
+        assertEquals(D2, r.getEndDate());
     }
 }

@@ -1,5 +1,6 @@
 package com.example.locker_reservation_system.controller;
 
+import com.example.locker_reservation_system.dto.LockerStatusResponse;
 import com.example.locker_reservation_system.dto.ReservationRequest;
 import com.example.locker_reservation_system.entity.Locker;
 import com.example.locker_reservation_system.entity.Reservation;
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -138,6 +140,9 @@ class ReservationControllerTest {
         LocalDate s = LocalDate.of(2025, 1, 1);
         LocalDate e = LocalDate.of(2025, 1, 2);
         Reservation r = fakeReservation(l, u, s, e);
+        
+        // Add the reservation to user's reservations list
+        u.getReservations().add(r);
 
         when(reservationRepo.findById(10L)).thenReturn(Optional.of(r));
 
@@ -169,6 +174,9 @@ class ReservationControllerTest {
         LocalDate newS = LocalDate.of(2025, 1, 3);
         LocalDate newE = LocalDate.of(2025, 1, 4);
         Reservation r = fakeReservation(l, u, s, e);
+        
+        // Add the reservation to user's reservations list
+        u.getReservations().add(r);
 
         when(reservationRepo.findById(10L)).thenReturn(Optional.of(r));
 
@@ -188,6 +196,9 @@ class ReservationControllerTest {
         LocalDate newS = LocalDate.of(2025, 1, 2);
         LocalDate newE = LocalDate.of(2025, 1, 3);
         Reservation r = fakeReservation(l, u, s, e);
+        
+        // Add the original reservation to user's reservations list
+        u.getReservations().add(r);
 
         when(reservationRepo.findById(10L)).thenReturn(Optional.of(r));
 
@@ -199,5 +210,65 @@ class ReservationControllerTest {
         assertThatThrownBy(() -> reservationController.updateReservationDates(10L, newS, newE))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Locker already reserved");
+    }
+
+    @Test
+    void getLockerReservationStatus_shouldReturnStatusList() {
+        LocalDate s = LocalDate.of(2025, 1, 1);
+        LocalDate e = LocalDate.of(2025, 1, 2);
+        Locker l = fakeLocker();
+        
+        when(lockerRepo.findAll()).thenReturn(List.of(l));
+        
+        List<LockerStatusResponse> statusList = reservationController.getLockerReservationStatus(s, e);
+        
+        assertThat(statusList).hasSize(1);
+        assertThat(statusList.get(0).getLockerId()).isEqualTo(l.getLockerId());
+    }
+
+    @Test
+    void getLockerReservationStatus_invalidDateRange() {
+        LocalDate s = LocalDate.of(2025, 1, 2);
+        LocalDate e = LocalDate.of(2025, 1, 1);
+        
+        assertThatThrownBy(() -> reservationController.getLockerReservationStatus(s, e))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("start > end");
+    }
+
+    @Test
+    void getByUser_shouldReturnUserReservations() {
+        User u = fakeUser();
+        Locker l = fakeLocker();
+        LocalDate s = LocalDate.of(2025, 1, 1);
+        LocalDate e = LocalDate.of(2025, 1, 2);
+        Reservation r = fakeReservation(l, u, s, e);
+        
+        u.getReservations().add(r);
+        when(userRepo.findById(5L)).thenReturn(Optional.of(u));
+        
+        List<Reservation> reservations = reservationController.getByUser(5L);
+        
+        assertThat(reservations).hasSize(1);
+        assertThat(reservations.get(0)).isEqualTo(r);
+    }
+
+    @Test
+    void getByUser_userNotFound() {
+        when(userRepo.findById(5L)).thenReturn(Optional.empty());
+        
+        assertThatThrownBy(() -> reservationController.getByUser(5L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("User not found");
+    }
+
+    @Test
+    void updateReservationDates_reservationNotFound() {
+        when(reservationRepo.findById(10L)).thenReturn(Optional.empty());
+        
+        assertThatThrownBy(() -> reservationController.updateReservationDates(10L, 
+                LocalDate.of(2025, 1, 3), LocalDate.of(2025, 1, 4)))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Reservation not found");
     }
 }
