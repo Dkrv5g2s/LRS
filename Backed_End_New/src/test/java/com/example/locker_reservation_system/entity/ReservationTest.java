@@ -44,8 +44,16 @@ public class ReservationTest {
 
     @Test
     void testCancel() {
+        // 確保預約已經被添加到用戶的預約列表中
+        assertTrue(user.getReservations().contains(r));
+        
+        // 執行取消操作
         r.cancel();
+        
+        // 驗證置物櫃日期已釋放
         assertTrue(locker.isAvailable(D1, D2));
+        
+        // 驗證預約已從用戶的預約列表中移除
         assertFalse(user.getReservations().contains(r));
     }
 

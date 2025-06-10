@@ -55,12 +55,12 @@ public class LockerController {
         Locker locker = lockerRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Locker with ID " + id + " not found"));
 
-        // 檢查日期範圍是否可用
-        if (req.getStartDate() != null && req.getEndDate() != null) {
-            if (!locker.isAvailable(req.getStartDate(), req.getEndDate())) {
-                throw new IllegalStateException("Cannot update locker - some dates in the range are already reserved");
-            }
-        }
+//        // 檢查日期範圍是否可用
+//        if (req.getStartDate() != null && req.getEndDate() != null) {
+//            if (!locker.isAvailable(req.getStartDate(), req.getEndDate())) {
+//                throw new IllegalStateException("Cannot update locker - some dates in the range are already reserved");
+//            }
+//        }
 
         // 更新容量
         if (req.getCapacity() != null && req.getCapacity() > 0) {
