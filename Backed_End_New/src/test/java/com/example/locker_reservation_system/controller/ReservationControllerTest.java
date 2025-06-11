@@ -2,6 +2,7 @@ package com.example.locker_reservation_system.controller;
 
 import com.example.locker_reservation_system.dto.LockerStatusResponse;
 import com.example.locker_reservation_system.dto.ReservationRequest;
+import com.example.locker_reservation_system.entity.Customer;
 import com.example.locker_reservation_system.entity.Locker;
 import com.example.locker_reservation_system.entity.Reservation;
 import com.example.locker_reservation_system.entity.User;
@@ -45,16 +46,14 @@ class ReservationControllerTest {
         return l;
     }
 
-    private User fakeUser() {
-        User u = new User();
-        u.setUserId(5L);
-        u.setAccountName("test");
-        u.setPhoneNumber("1234567890");
-        return u;
+    private Customer fakeUser() {
+        Customer customer = new Customer("test", "password", "1234567890");
+        customer.setUserId(5L);
+        return customer;
     }
 
-    private Reservation fakeReservation(Locker l, User u, LocalDate s, LocalDate e) {
-        Reservation r = new Reservation(l, u, s, e);
+    private Reservation fakeReservation(Locker l, Customer customer, LocalDate s, LocalDate e) {
+        Reservation r = new Reservation(l, customer, s, e);
         r.setId(10L);
         return r;
     }
@@ -71,7 +70,7 @@ class ReservationControllerTest {
         LocalDate e = LocalDate.of(2025, 1, 2);
 
         Locker l = fakeLocker();
-        User u = fakeUser();
+        Customer u = fakeUser();
 
         when(lockerRepo.findById(1L)).thenReturn(Optional.of(l));
         when(userRepo.findById(5L)).thenReturn(Optional.of(u));
@@ -85,7 +84,7 @@ class ReservationControllerTest {
         Reservation r = reservationController.reserve(req);
         
         assertThat(r.getLocker()).isEqualTo(l);
-        assertThat(r.getUser()).isEqualTo(u);
+        assertThat(r.getCustomer()).isEqualTo(u);
         assertThat(r.getStartDate()).isEqualTo(s);
         assertThat(r.getEndDate()).isEqualTo(e);
         assertThat(r.getBarcode()).isNotBlank();
@@ -97,7 +96,7 @@ class ReservationControllerTest {
         LocalDate e = LocalDate.of(2025, 1, 1);
 
         Locker l = fakeLocker();
-        User u = fakeUser();
+        Customer u = fakeUser();
 
         when(lockerRepo.findById(1L)).thenReturn(Optional.of(l));
         when(userRepo.findById(5L)).thenReturn(Optional.of(u));
@@ -117,7 +116,7 @@ class ReservationControllerTest {
     void reserve_lockerNotFound() {
         LocalDate s = LocalDate.of(2025, 1, 1);
         LocalDate e = LocalDate.of(2025, 1, 2);
-        User u = fakeUser();
+        Customer u = fakeUser();
 
         when(lockerRepo.findById(1L)).thenReturn(Optional.empty());
 
@@ -136,7 +135,7 @@ class ReservationControllerTest {
     @Test
     void cancel_shouldRemoveReservation() {
         Locker l = fakeLocker();
-        User u = fakeUser();
+        Customer u = fakeUser();
         LocalDate s = LocalDate.of(2025, 1, 1);
         LocalDate e = LocalDate.of(2025, 1, 2);
         Reservation r = fakeReservation(l, u, s, e);
@@ -168,7 +167,7 @@ class ReservationControllerTest {
     @Test
     void reschedule_success() {
         Locker l = fakeLocker();
-        User u = fakeUser();
+        Customer u = fakeUser();
         LocalDate s = LocalDate.of(2025, 1, 1);
         LocalDate e = LocalDate.of(2025, 1, 2);
         LocalDate newS = LocalDate.of(2025, 1, 3);
@@ -190,7 +189,7 @@ class ReservationControllerTest {
     @Test
     void reschedule_conflict() {
         Locker l = fakeLocker();
-        User u = fakeUser();
+        Customer u = fakeUser();
         LocalDate s = LocalDate.of(2025, 1, 1);
         LocalDate e = LocalDate.of(2025, 1, 2);
         LocalDate newS = LocalDate.of(2025, 1, 2);
@@ -238,7 +237,7 @@ class ReservationControllerTest {
 
     @Test
     void getByUser_shouldReturnUserReservations() {
-        User u = fakeUser();
+        Customer u = fakeUser();
         Locker l = fakeLocker();
         LocalDate s = LocalDate.of(2025, 1, 1);
         LocalDate e = LocalDate.of(2025, 1, 2);

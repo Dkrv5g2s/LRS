@@ -1,6 +1,8 @@
 package com.example.locker_reservation_system.controller;
 
 import com.example.locker_reservation_system.dto.ReservationRequest;
+import com.example.locker_reservation_system.entity.Administrator;
+import com.example.locker_reservation_system.entity.Customer;
 import com.example.locker_reservation_system.entity.Locker;
 import com.example.locker_reservation_system.entity.Reservation;
 import com.example.locker_reservation_system.entity.User;
@@ -25,146 +27,234 @@ import static org.mockito.Mockito.*;
 class ReservationManageControllerTest {
 
     @Mock
-    private ReservationRepository reservationRepo;
+    private UserRepository userRepo;
     @Mock
     private LockerRepository lockerRepo;
     @Mock
-    private UserRepository userRepo;
+    private ReservationRepository reservationRepo;
 
     @InjectMocks
     private ReservationManageController controller;
 
-    private User adminUser;
-    private User targetUser;
+    private Administrator admin;
+    private Customer customer;
     private Locker locker;
     private Reservation reservation;
-    private static final LocalDate D1 = LocalDate.of(2024, 1, 1);
-    private static final LocalDate D2 = LocalDate.of(2024, 1, 3);
 
     @BeforeEach
     void setUp() {
-        // Setup admin user
-        adminUser = new User();
-        adminUser.setUserId(1L);
-        adminUser.setAccountName("admin");
-        adminUser.setIsAdmin(true);
-
-        // Setup target user
-        targetUser = new User();
-        targetUser.setUserId(2L);
-        targetUser.setAccountName("user");
-        targetUser.setIsAdmin(false);
-
-        // Setup locker
+        admin = new Administrator("admin", "adminpw", "0987654321");
+        admin.setUserId(1L);
+        
+        customer = new Customer("customer", "customerpw", "1234567890");
+        customer.setUserId(2L);
+        
         locker = new Locker();
         locker.setLockerId(1L);
         locker.setSite("A");
         locker.setCapacity(1);
         locker.setUsability(true);
+        
+        // 創建測試用的預約，但不將其添加到用戶的預約列表中，也不標記置物櫃的日期
+        LocalDate startDate = LocalDate.now().plusDays(10);  // 使用較遠的日期
+        LocalDate endDate = startDate.plusDays(1);
+        reservation = new Reservation(locker, customer, startDate, endDate);
+        reservation.setId(1L);
     }
 
     @Test
     void searchUsers_shouldReturnNonAdminUsers() {
-        when(userRepo.findById(1L)).thenReturn(Optional.of(adminUser));
-        when(userRepo.findByAccountNameContainingIgnoreCase("user")).thenReturn(List.of(targetUser));
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(userRepo.findByAccountNameContainingIgnoreCase("customer")).thenReturn(List.of(customer));
 
-        List<User> result = controller.searchUsers("user", 1L);
+        List<User> result = controller.searchUsers("customer", 1L);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0)).isEqualTo(targetUser);
-        verify(userRepo).findById(1L);
-        verify(userRepo).findByAccountNameContainingIgnoreCase("user");
+        assertThat(result.get(0)).isEqualTo(customer);
+        verify(userRepo).findByAccountNameContainingIgnoreCase("customer");
     }
 
     @Test
     void searchUsers_adminNotFound() {
         when(userRepo.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> controller.searchUsers("user", 1L))
+        assertThatThrownBy(() -> controller.searchUsers("customer", 1L))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Admin user not found");
     }
 
     @Test
     void reserveForUser_shouldCreateReservation() {
-        when(userRepo.findById(1L)).thenReturn(Optional.of(adminUser));
-        when(userRepo.findById(2L)).thenReturn(Optional.of(targetUser));
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = startDate.plusDays(1);
+
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(userRepo.findById(2L)).thenReturn(Optional.of(customer));
         when(lockerRepo.findById(1L)).thenReturn(Optional.of(locker));
 
-        ReservationRequest req = new ReservationRequest();
-        req.setLockerId(1L);
-        req.setUserId(2L);
-        req.setStartDate(D1);
-        req.setEndDate(D2);
+        assertThat(locker.isAvailable(startDate, endDate)).isTrue();
 
-        Reservation result = controller.reserveForUser(req, 1L);
+        ReservationRequest request = new ReservationRequest();
+        request.setLockerId(1L);
+        request.setUserId(2L);
+        request.setStartDate(startDate);
+        request.setEndDate(endDate);
 
+        Reservation result = controller.reserveForUser(request, 1L);
+
+        assertThat(result).isNotNull();
         assertThat(result.getLocker()).isEqualTo(locker);
-        assertThat(result.getUser()).isEqualTo(targetUser);
-        assertThat(result.getStartDate()).isEqualTo(D1);
-        assertThat(result.getEndDate()).isEqualTo(D2);
-        assertThat(result.getBarcode()).isNotNull();
-        verify(userRepo).findById(1L);
-        verify(userRepo).findById(2L);
-        verify(lockerRepo).findById(1L);
+        assertThat(result.getCustomer()).isEqualTo(customer);
+        assertThat(result.getStartDate()).isEqualTo(startDate);
+        assertThat(result.getEndDate()).isEqualTo(endDate);
+        assertThat(result.getBarcode()).isNotBlank();
     }
 
     @Test
     void getReservationsForUser_shouldReturnUserReservations() {
-        when(userRepo.findById(1L)).thenReturn(Optional.of(adminUser));
-        when(userRepo.findById(2L)).thenReturn(Optional.of(targetUser));
-        targetUser.getReservations().add(reservation);
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(userRepo.findById(2L)).thenReturn(Optional.of(customer));
+        customer.getReservations().add(reservation);
 
         List<Reservation> result = controller.getReservationsForUser(2L, 1L);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0)).isEqualTo(reservation);
-        verify(userRepo).findById(1L);
-        verify(userRepo).findById(2L);
     }
 
     @Test
     void updateReservationDateForUser_shouldUpdateDates() {
-        // Create a reservation for testing
-        Reservation testReservation = new Reservation(locker, targetUser, D1, D2);
-        testReservation.setId(1L);
-        targetUser.getReservations().add(testReservation);
-        
-        when(userRepo.findById(1L)).thenReturn(Optional.of(adminUser));
-        when(reservationRepo.findById(1L)).thenReturn(Optional.of(testReservation));
-        LocalDate newStart = LocalDate.of(2024, 1, 4);
-        LocalDate newEnd = LocalDate.of(2024, 1, 5);
+        LocalDate newStartDate = LocalDate.now().plusDays(2);
+        LocalDate newEndDate = newStartDate.plusDays(1);
 
-        Reservation result = controller.updateReservationDateForUser(1L, newStart, newEnd, 1L);
+        // 確保預約被添加到用戶的預約列表中
+        customer.getReservations().add(reservation);
 
-        assertThat(result.getStartDate()).isEqualTo(newStart);
-        assertThat(result.getEndDate()).isEqualTo(newEnd);
-        assertThat(result.getBarcode()).isNotNull();
-        verify(userRepo).findById(1L);
-        verify(reservationRepo).findById(1L);
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(reservationRepo.findById(1L)).thenReturn(Optional.of(reservation));
+
+        // 確保置物櫃在新日期範圍內是可用的
+        assertThat(locker.isAvailable(newStartDate, newEndDate)).isTrue();
+
+        Reservation result = controller.updateReservationDateForUser(1L, newStartDate, newEndDate, 1L);
+
+        assertThat(result.getStartDate()).isEqualTo(newStartDate);
+        assertThat(result.getEndDate()).isEqualTo(newEndDate);
+        assertThat(result.getBarcode()).isNotBlank();
     }
 
     @Test
     void cancelReservationForUser_shouldCancelReservation() {
-        // Create a reservation for testing
-        Reservation testReservation = new Reservation(locker, targetUser, D1, D2);
-        testReservation.setId(1L);
-        targetUser.getReservations().add(testReservation); // Add reservation to user's list
-        
-        when(userRepo.findById(1L)).thenReturn(Optional.of(adminUser));
-        when(reservationRepo.findById(1L)).thenReturn(Optional.of(testReservation));
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(reservationRepo.findById(1L)).thenReturn(Optional.of(reservation));
+        customer.getReservations().add(reservation);
 
         controller.cancelReservationForUser(1L, 1L);
 
-        verify(userRepo).findById(1L);
-        verify(reservationRepo).findById(1L);
-        verify(reservationRepo).delete(testReservation);
-        assertThat(targetUser.getReservations()).doesNotContain(testReservation);
+        verify(reservationRepo).delete(reservation);
+        assertThat(customer.getReservations()).doesNotContain(reservation);
+    }
+
+    @Test
+    void reserveForUser_adminNotFound() {
+        when(userRepo.findById(1L)).thenReturn(Optional.empty());
+
+        ReservationRequest request = new ReservationRequest();
+        request.setLockerId(1L);
+        request.setUserId(2L);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(1));
+
+        assertThatThrownBy(() -> controller.reserveForUser(request, 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Admin user not found");
+    }
+
+    @Test
+    void reserveForUser_customerNotFound() {
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(userRepo.findById(2L)).thenReturn(Optional.empty());
+
+        ReservationRequest request = new ReservationRequest();
+        request.setLockerId(1L);
+        request.setUserId(2L);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(1));
+
+        assertThatThrownBy(() -> controller.reserveForUser(request, 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Target User not found");
+    }
+
+    @Test
+    void reserveForUser_lockerNotFound() {
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(userRepo.findById(2L)).thenReturn(Optional.of(customer));
+        when(lockerRepo.findById(1L)).thenReturn(Optional.empty());
+
+        ReservationRequest request = new ReservationRequest();
+        request.setLockerId(1L);
+        request.setUserId(2L);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(1));
+
+        assertThatThrownBy(() -> controller.reserveForUser(request, 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Locker not found");
+    }
+
+    @Test
+    void getReservationsForUser_adminNotFound() {
+        when(userRepo.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> controller.getReservationsForUser(2L, 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Admin user not found");
+    }
+
+    @Test
+    void getReservationsForUser_customerNotFound() {
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(userRepo.findById(2L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> controller.getReservationsForUser(2L, 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Target User not found");
+    }
+
+    @Test
+    void updateReservationDateForUser_adminNotFound() {
+        when(userRepo.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> controller.updateReservationDateForUser(1L, 
+                LocalDate.now(), LocalDate.now().plusDays(1), 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Admin user not found");
+    }
+
+    @Test
+    void updateReservationDateForUser_reservationNotFound() {
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
+        when(reservationRepo.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> controller.updateReservationDateForUser(1L, 
+                LocalDate.now(), LocalDate.now().plusDays(1), 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Reservation not found");
+    }
+
+    @Test
+    void cancelReservationForUser_adminNotFound() {
+        when(userRepo.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> controller.cancelReservationForUser(1L, 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Admin user not found");
     }
 
     @Test
     void cancelReservationForUser_reservationNotFound() {
-        when(userRepo.findById(1L)).thenReturn(Optional.of(adminUser));
+        when(userRepo.findById(1L)).thenReturn(Optional.of(admin));
         when(reservationRepo.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> controller.cancelReservationForUser(1L, 1L))

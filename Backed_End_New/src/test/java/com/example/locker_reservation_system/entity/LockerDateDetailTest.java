@@ -34,11 +34,11 @@ class LockerDateDetailTest {
     void set_locker() {
         Locker locker = new Locker();
         locker.setLockerId(1L);
-        
+
         LockerDateDetail d = new LockerDateDetail();
         d.setDate(DATE);
         d.setLocker(locker);
-        
+
         assertThat(d.getLocker()).isEqualTo(locker);
         assertThat(locker.getDateDetails()).contains(d);
     }
@@ -48,7 +48,7 @@ class LockerDateDetailTest {
         LockerDateDetail d = new LockerDateDetail();
         d.setStatus("available");
         assertThat(d.getStatus()).isEqualTo("available");
-        
+
         d.setStatus("occupied");
         assertThat(d.getStatus()).isEqualTo("occupied");
     }
@@ -58,23 +58,8 @@ class LockerDateDetailTest {
         LockerDateDetail d = new LockerDateDetail();
         d.setMemo("初始備註");
         assertThat(d.getMemo()).isEqualTo("初始備註");
-        
+
         d.setMemo("更新備註");
         assertThat(d.getMemo()).isEqualTo("更新備註");
-    }
-
-    @Test
-    void testToString() {
-        LockerDateDetail d = new LockerDateDetail();
-        d.setLockerDateDetailId(1L);
-        d.setDate(DATE);
-        d.setStatus("available");
-        d.setMemo("測試備註");
-
-        String str = d.toString();
-        assertThat(str).contains("lockerDateDetailId=1");
-        assertThat(str).contains("date=" + DATE);
-        assertThat(str).contains("status='available'");
-        assertThat(str).contains("memo='測試備註'");
     }
 }

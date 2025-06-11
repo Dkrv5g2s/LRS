@@ -13,7 +13,7 @@ public class ReservationTest {
     private static final LocalDate D3 = LocalDate.of(2024, 1, 5);
 
     private Locker locker;
-    private User user;
+    private Customer customer;
     private Reservation r;
 
     @BeforeEach
@@ -24,19 +24,17 @@ public class ReservationTest {
         locker.setCapacity(1);
         locker.setUsability(true);
 
-        user = new User();
-        user.setUserId(1L);
-        user.setAccountName("test");
-        user.setPhoneNumber("1234567890");
+        customer = new Customer("test", "password", "1234567890");
+        customer.setUserId(1L);
 
-        r = user.reserve(locker, D1, D2);
+        r = customer.reserve(locker, D1, D2);
     }
 
     @Test
     void testConstructor() {
-        Reservation reservation = new Reservation(locker, user, D1, D2);
+        Reservation reservation = new Reservation(locker, customer, D1, D2);
         assertEquals(locker, reservation.getLocker());
-        assertEquals(user, reservation.getUser());
+        assertEquals(customer, reservation.getCustomer());
         assertEquals(D1, reservation.getStartDate());
         assertEquals(D2, reservation.getEndDate());
         assertNotNull(reservation.getBarcode());
@@ -45,7 +43,7 @@ public class ReservationTest {
     @Test
     void testCancel() {
         // 確保預約已經被添加到用戶的預約列表中
-        assertTrue(user.getReservations().contains(r));
+        assertTrue(customer.getReservations().contains(r));
         
         // 執行取消操作
         r.cancel();
@@ -54,7 +52,7 @@ public class ReservationTest {
         assertTrue(locker.isAvailable(D1, D2));
         
         // 驗證預約已從用戶的預約列表中移除
-        assertFalse(user.getReservations().contains(r));
+        assertFalse(customer.getReservations().contains(r));
     }
 
     @Test
@@ -76,9 +74,9 @@ public class ReservationTest {
         LocalDate newEndDate = LocalDate.now().plusDays(3);
         
         // 創建另一個預約並標記置物櫃的日期範圍
-        Reservation anotherReservation = new Reservation(locker, user, newStartDate, newEndDate);
+        Reservation anotherReservation = new Reservation(locker, customer, newStartDate, newEndDate);
         locker.markDateRangeStatus(newStartDate, newEndDate, "occupied");
-        user.getReservations().add(anotherReservation);
+        customer.getReservations().add(anotherReservation);
         
         // 嘗試重新預約到已被佔用的日期範圍
         assertThrows(RuntimeException.class, () -> {
@@ -110,13 +108,11 @@ public class ReservationTest {
 
     @Test
     void testReschedule_conflict() {
-        User user2 = new User();
-        user2.setUserId(2L);
-        user2.setAccountName("test2");
-        user2.setPhoneNumber("0987654321");
+        Customer customer2 = new Customer("test2", "password2", "0987654321");
+        customer2.setUserId(2L);
         
         // Create another reservation that conflicts with the new dates
-        Reservation conflictReservation = new Reservation(locker, user2, D3, D3);
+        Reservation conflictReservation = new Reservation(locker, customer2, D3, D3);
         
         assertThrows(RuntimeException.class, () -> r.reschedule(D3, D3));
         assertEquals(D1, r.getStartDate());

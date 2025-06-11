@@ -2,6 +2,7 @@ package com.example.locker_reservation_system.controller;
 
 import com.example.locker_reservation_system.dto.LoginRequest;
 import com.example.locker_reservation_system.dto.RegisterRequest;
+import com.example.locker_reservation_system.entity.Customer;
 import com.example.locker_reservation_system.entity.User;
 import com.example.locker_reservation_system.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,8 +28,8 @@ class AuthControllerTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    private User createUser() {
-        return new User("test", "password", "1234567890");
+    private Customer createUser() {
+        return new Customer("test", "password", "1234567890");
     }
 
     @Test
@@ -38,10 +39,10 @@ class AuthControllerTest {
         req.setPassword("pwd");
         req.setPhoneNumber("0988");
 
-        User user = new User(req.getAccountName(), req.getPassword(), req.getPhoneNumber());
+        Customer customer = new Customer(req.getAccountName(), req.getPassword(), req.getPhoneNumber());
 
         when(userRepo.findByAccountName("tom")).thenReturn(null);
-        when(userRepo.save(any(User.class))).thenReturn(user);
+        when(userRepo.save(any(User.class))).thenReturn(customer);
 
         ResponseEntity<?> result = authController.register(req);
         

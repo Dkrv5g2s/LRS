@@ -152,38 +152,6 @@ public class Locker {
         }
     }
 
-    // entity/Locker.java  新增 / 修改片段
 
-//    /* 工廠：由管理員建立 */
-//    public static Locker create(String site, Integer cap, Boolean usable) {
-//        Locker l = new Locker();
-//        l.site      = site;
-//        l.capacity  = cap;
-//        l.usability = usable;
-//        return l;
-//    }
-//
-//    /* 基本資料異動 */
-//    public void updateBasicInfo(String site, Integer cap, Boolean usable) {
-//        if (site != null)      this.site      = site;
-//        if (cap  != null)      this.capacity  = cap;
-//        if (usable != null)    this.usability = usable;
-//    }
-//
-//    /* 管理員手動覆寫某天狀態／備註 */
-//    public void overrideDateDetail(LocalDate date, String status, String memo) {
-//        LockerDateDetail d = dateDetails.stream()
-//                .filter(dd -> dd.getDate().equals(date))
-//                .findFirst()
-//                .orElseGet(() -> {
-//                    LockerDateDetail nd = new LockerDateDetail();
-//                    nd.setLocker(this);
-//                    nd.setDate(date);
-//                    dateDetails.add(nd);
-//                    return nd;
-//                });
-//        if (status != null) d.setStatus(status);
-//        if (memo   != null) d.setMemo(memo);
-//    }
 
 }
