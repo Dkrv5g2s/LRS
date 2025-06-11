@@ -55,7 +55,7 @@ public class LockerController {
                 .orElseThrow(() -> new IllegalArgumentException("Locker with ID " + id + " not found"));
 
         // 更新置物櫃資訊
-        locker.update(req.getCapacity(), req.getStartDate(), req.getEndDate(), req.getStatus(), req.getMemo());
+        locker.update(req);
 
         return lockerRepo.save(locker);
     }

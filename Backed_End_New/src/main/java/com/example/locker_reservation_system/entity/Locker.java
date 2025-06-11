@@ -1,6 +1,7 @@
 package com.example.locker_reservation_system.entity;
 
 import com.example.locker_reservation_system.dto.LockerStatusResponse;
+import com.example.locker_reservation_system.dto.LockerUpdateRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -130,22 +131,23 @@ public class Locker {
     }
 
     /** 更新置物櫃資訊 */
-    public void update(Integer capacity, LocalDate startDate, LocalDate endDate, String status, String memo) {
+    public void update(LockerUpdateRequest req) {
         // 更新容量
-        if (capacity != null && capacity > 0) {
-            this.capacity = capacity;
+        if (req.getCapacity() != null && req.getCapacity() > 0) {
+            this.capacity = req.getCapacity();
         }
 
         // 更新日期範圍內的狀態和備註
-        if (startDate != null && endDate != null && (status != null || memo != null)) {
+        if (req.getStartDate() != null && req.getEndDate() != null && 
+            (req.getStatus() != null || req.getMemo() != null)) {
             // 更新狀態
-            if (status != null) {
-                markDateRangeStatus(startDate, endDate, status);
+            if (req.getStatus() != null) {
+                markDateRangeStatus(req.getStartDate(), req.getEndDate(), req.getStatus());
             }
             
             // 更新備註
-            if (memo != null) {
-                updateDateRangeMemo(startDate, endDate, memo);
+            if (req.getMemo() != null) {
+                updateDateRangeMemo(req.getStartDate(), req.getEndDate(), req.getMemo());
             }
         }
     }
