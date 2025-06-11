@@ -33,49 +33,38 @@ public class Reservation {
     @Column(name = "barcode")
     private String barcode;
 
-    /* ====== 建構器供 Locker 呼叫 ====== */
     public Reservation(Locker locker, Customer customer, LocalDate start, LocalDate end) {
         this.locker = locker;
         this.customer = customer;
         this.startDate = start;
         this.endDate = end;
         regenerateBarcode();
-        // 標記日期範圍
         locker.markDateRangeStatus(start, end, "occupied");
     }
 
-    /* ====== 行為 ====== */
-    /** 取消預約 */
     public void cancel() {
         this.locker.release(this.startDate, this.endDate);
         this.customer.getReservations().remove(this);
     }
 
-    /* 重新產生條碼 (給 reschedule 用) */
     public void regenerateBarcode() {
         String raw = locker.getLockerId() + "-" + customer.getUserId() + "-" + startDate + "-" + endDate + "-" + System.currentTimeMillis();
         this.barcode = com.example.locker_reservation_system.util.BarcodeUtil.generateBase64(raw);
     }
 
-    /* 調整日期 */
     public void reschedule(LocalDate newStart, LocalDate newEnd) {
         if (newStart.isAfter(newEnd)) throw new IllegalArgumentException("Start date must be before or equal to end date");
-        
-        // 先釋放原日期
+
         locker.release(startDate, endDate);
 
-        // 檢查新區段是否可用
         if (!locker.isAvailable(newStart, newEnd)) {
-            // 回滾原日期
             locker.markDateRangeStatus(startDate, endDate, "occupied");
             throw new RuntimeException("Locker already reserved in new period");
         }
 
-        // 標記新區段並更新日期
         locker.markDateRangeStatus(newStart, newEnd, "occupied");
         this.startDate = newStart;
         this.endDate = newEnd;
         regenerateBarcode();
     }
-
 }

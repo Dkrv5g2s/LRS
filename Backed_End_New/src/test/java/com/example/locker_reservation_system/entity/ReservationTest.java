@@ -42,16 +42,9 @@ public class ReservationTest {
 
     @Test
     void testCancel() {
-        // 確保預約已經被添加到用戶的預約列表中
         assertTrue(customer.getReservations().contains(r));
-        
-        // 執行取消操作
         r.cancel();
-        
-        // 驗證置物櫃日期已釋放
         assertTrue(locker.isAvailable(D1, D2));
-        
-        // 驗證預約已從用戶的預約列表中移除
         assertFalse(customer.getReservations().contains(r));
     }
 
@@ -59,26 +52,19 @@ public class ReservationTest {
     void testReschedule() {
         LocalDate newStartDate = LocalDate.now().plusDays(5);
         LocalDate newEndDate = LocalDate.now().plusDays(7);
-        
-        // 重新預約
         r.reschedule(newStartDate, newEndDate);
-        
         assertEquals(newStartDate, r.getStartDate());
         assertEquals(newEndDate, r.getEndDate());
-        assertFalse(locker.isAvailable(newStartDate, newEndDate)); // 新的日期範圍應該被佔用
+        assertFalse(locker.isAvailable(newStartDate, newEndDate));
     }
 
     @Test
     void testRescheduleConflict() {
         LocalDate newStartDate = LocalDate.now().plusDays(1);
         LocalDate newEndDate = LocalDate.now().plusDays(3);
-        
-        // 創建另一個預約並標記置物櫃的日期範圍
         Reservation anotherReservation = new Reservation(locker, customer, newStartDate, newEndDate);
         locker.markDateRangeStatus(newStartDate, newEndDate, "occupied");
         customer.getReservations().add(anotherReservation);
-        
-        // 嘗試重新預約到已被佔用的日期範圍
         assertThrows(RuntimeException.class, () -> {
             r.reschedule(newStartDate, newEndDate);
         });
@@ -94,7 +80,6 @@ public class ReservationTest {
         String barcode = r.getBarcode();
         assertNotNull(barcode);
         assertTrue(barcode.length() > 0);
-        // 檢查是否為有效的 Base64 字串
         assertDoesNotThrow(() -> Base64.getDecoder().decode(barcode));
     }
 
@@ -110,10 +95,7 @@ public class ReservationTest {
     void testReschedule_conflict() {
         Customer customer2 = new Customer("test2", "password2", "0987654321");
         customer2.setUserId(2L);
-        
-        // Create another reservation that conflicts with the new dates
         Reservation conflictReservation = new Reservation(locker, customer2, D3, D3);
-        
         assertThrows(RuntimeException.class, () -> r.reschedule(D3, D3));
         assertEquals(D1, r.getStartDate());
         assertEquals(D2, r.getEndDate());

@@ -4,10 +4,12 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
+import lombok.Getter;
 
 import java.time.LocalDate;
 import java.util.Optional;
 
+@Getter
 @Entity
 @DiscriminatorValue("CUSTOMER")
 public class Customer extends User {
@@ -15,10 +17,6 @@ public class Customer extends User {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonIgnore
     private java.util.List<Reservation> reservations = new java.util.ArrayList<>();
-
-    public java.util.List<Reservation> getReservations() {
-        return reservations;
-    }
 
     public Customer() {
         super();
@@ -30,7 +28,6 @@ public class Customer extends User {
         this.setIsAdmin(false);
     }
 
-    /** 預約置物櫃 */
     public Reservation reserve(Locker locker, LocalDate start, LocalDate end) {
         if (start.isAfter(end))
             throw new IllegalArgumentException("start > end");
@@ -42,7 +39,6 @@ public class Customer extends User {
         return r;
     }
 
-    /** 取消指定ID的預約 */
     public void cancelReservation(Long reservationId) {
         Optional<Reservation> reservationOptional = this.getReservations().stream()
                 .filter(r -> r.getId().equals(reservationId))
@@ -60,7 +56,6 @@ public class Customer extends User {
         }
     }
 
-    /** 更新指定ID預約的日期 */
     public Reservation updateReservationDates(Long reservationId, LocalDate newStart, LocalDate newEnd) {
         Optional<Reservation> reservationOptional = this.getReservations().stream()
                 .filter(r -> r.getId().equals(reservationId))

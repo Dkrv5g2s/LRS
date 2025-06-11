@@ -24,7 +24,6 @@ public class Locker {
     private Integer capacity;
     private Boolean usability;
 
-    /* ==== 關聯 ==== */
     @OneToMany(mappedBy = "locker", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<LockerDateDetail> dateDetails = new ArrayList<>();
@@ -39,9 +38,6 @@ public class Locker {
                 '}';
     }
 
-    /* ========= 主要業務行為 ========= */
-
-    /** 回傳此區段是否全部可訂 */
     public boolean isAvailable(LocalDate start, LocalDate end) {
         return generateDateStream(start, end)
                 .allMatch(d -> dateDetails.stream()
@@ -49,12 +45,10 @@ public class Locker {
                         .allMatch(det -> "available".equalsIgnoreCase(det.getStatus())));
     }
 
-    /** 取消某筆預約 (由 Reservation 呼叫) */
     public void release(LocalDate start, LocalDate end) {
         markDateRangeStatus(start, end, "available");
     }
 
-    /** 生成 LockerStatusResponse（for Controller） */
     public LockerStatusResponse toStatusResponse(LocalDate start, LocalDate end) {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LockerStatusResponse resp = new LockerStatusResponse();
@@ -66,7 +60,6 @@ public class Locker {
         boolean allAvailable = isAvailable(start, end);
         resp.setStatus(allAvailable ? "available" : "unavailable");
 
-        // 彙整備註
         String memo = dateDetails.stream()
                 .filter(d -> !d.getDate().isBefore(start) && !d.getDate().isAfter(end))
                 .filter(d -> d.getMemo() != null && !d.getMemo().isBlank())
@@ -77,14 +70,12 @@ public class Locker {
         return resp;
     }
 
-    /* =========== 工具方法 =========== */
-
     public void markDateRangeStatus(LocalDate start, LocalDate end, String status) {
         generateDateStream(start, end).forEach(date -> {
             LockerDateDetail detail = dateDetails.stream()
                     .filter(d -> d.getDate().equals(date))
                     .findFirst()
-                    .orElseGet(() -> {               // 若不存在則新建
+                    .orElseGet(() -> {
                         LockerDateDetail nd = new LockerDateDetail();
                         nd.setLocker(this);
                         nd.setDate(date);
@@ -96,32 +87,30 @@ public class Locker {
     }
 
     private Stream<LocalDate> generateDateStream(LocalDate start, LocalDate end) {
-        return start.datesUntil(end.plusDays(1));     // inclusive
+        return start.datesUntil(end.plusDays(1));
     }
 
-    /** 更新日期範圍內的備註 */
     public void updateDateRangeMemo(LocalDate start, LocalDate end, String memo) {
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start date must be before or equal to end date");
         }
-        
+
         generateDateStream(start, end).forEach(date -> {
             LockerDateDetail detail = dateDetails.stream()
-                .filter(d -> d.getDate().equals(date))
-                .findFirst()
-                .orElseGet(() -> {
-                    LockerDateDetail newDetail = new LockerDateDetail();
-                    newDetail.setLocker(this);
-                    newDetail.setDate(date);
-                    newDetail.setStatus("available");
-                    dateDetails.add(newDetail);
-                    return newDetail;
-                });
+                    .filter(d -> d.getDate().equals(date))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        LockerDateDetail newDetail = new LockerDateDetail();
+                        newDetail.setLocker(this);
+                        newDetail.setDate(date);
+                        newDetail.setStatus("available");
+                        dateDetails.add(newDetail);
+                        return newDetail;
+                    });
             detail.setMemo(memo);
         });
     }
 
-    /** 新增置物櫃 */
     public void add(int capacity) {
         if (capacity <= 0) {
             throw new IllegalArgumentException("Capacity must be greater than 0");
@@ -130,28 +119,20 @@ public class Locker {
         this.capacity = capacity;
     }
 
-    /** 更新置物櫃資訊 */
     public void update(LockerUpdateRequest req) {
-        // 更新容量
         if (req.getCapacity() != null && req.getCapacity() > 0) {
             this.capacity = req.getCapacity();
         }
 
-        // 更新日期範圍內的狀態和備註
-        if (req.getStartDate() != null && req.getEndDate() != null && 
-            (req.getStatus() != null || req.getMemo() != null)) {
-            // 更新狀態
+        if (req.getStartDate() != null && req.getEndDate() != null &&
+                (req.getStatus() != null || req.getMemo() != null)) {
             if (req.getStatus() != null) {
                 markDateRangeStatus(req.getStartDate(), req.getEndDate(), req.getStatus());
             }
-            
-            // 更新備註
+
             if (req.getMemo() != null) {
                 updateDateRangeMemo(req.getStartDate(), req.getEndDate(), req.getMemo());
             }
         }
     }
-
-
-
 }
