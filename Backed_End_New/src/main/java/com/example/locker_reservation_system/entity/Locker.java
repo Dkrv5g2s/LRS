@@ -129,6 +129,27 @@ public class Locker {
         this.capacity = capacity;
     }
 
+    /** 更新置物櫃資訊 */
+    public void update(Integer capacity, LocalDate startDate, LocalDate endDate, String status, String memo) {
+        // 更新容量
+        if (capacity != null && capacity > 0) {
+            this.capacity = capacity;
+        }
+
+        // 更新日期範圍內的狀態和備註
+        if (startDate != null && endDate != null && (status != null || memo != null)) {
+            // 更新狀態
+            if (status != null) {
+                markDateRangeStatus(startDate, endDate, status);
+            }
+            
+            // 更新備註
+            if (memo != null) {
+                updateDateRangeMemo(startDate, endDate, memo);
+            }
+        }
+    }
+
     // entity/Locker.java  新增 / 修改片段
 
 //    /* 工廠：由管理員建立 */

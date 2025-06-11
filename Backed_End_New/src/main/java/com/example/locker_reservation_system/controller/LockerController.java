@@ -54,32 +54,8 @@ public class LockerController {
         Locker locker = lockerRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Locker with ID " + id + " not found"));
 
-//        // 檢查日期範圍是否可用
-//        if (req.getStartDate() != null && req.getEndDate() != null) {
-//            if (!locker.isAvailable(req.getStartDate(), req.getEndDate())) {
-//                throw new IllegalStateException("Cannot update locker - some dates in the range are already reserved");
-//            }
-//        }
-
-        // 更新容量
-        if (req.getCapacity() != null && req.getCapacity() > 0) {
-            locker.setCapacity(req.getCapacity());
-        }
-
-        // 更新日期範圍內的狀態和備註
-        if (req.getStartDate() != null && req.getEndDate() != null && 
-            (req.getStatus() != null || req.getMemo() != null)) {
-            
-            // 更新狀態
-            if (req.getStatus() != null) {
-                locker.markDateRangeStatus(req.getStartDate(), req.getEndDate(), req.getStatus());
-            }
-            
-            // 更新備註
-            if (req.getMemo() != null) {
-                locker.updateDateRangeMemo(req.getStartDate(), req.getEndDate(), req.getMemo());
-            }
-        }
+        // 更新置物櫃資訊
+        locker.update(req.getCapacity(), req.getStartDate(), req.getEndDate(), req.getStatus(), req.getMemo());
 
         return lockerRepo.save(locker);
     }
