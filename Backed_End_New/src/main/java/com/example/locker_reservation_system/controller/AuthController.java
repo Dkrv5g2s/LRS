@@ -2,6 +2,7 @@ package com.example.locker_reservation_system.controller;
 
 import com.example.locker_reservation_system.dto.LoginRequest;
 import com.example.locker_reservation_system.dto.RegisterRequest;
+import com.example.locker_reservation_system.entity.Customer;
 import com.example.locker_reservation_system.entity.User;
 import com.example.locker_reservation_system.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class AuthController {
                     .body("Account name already exists");
         }
 
-        User user = new User(req.getAccountName(), req.getPassword(), req.getPhoneNumber());
+        User user = new Customer(req.getAccountName(), req.getPassword(), req.getPhoneNumber());
         return ResponseEntity.ok(userRepo.save(user));
     }
 

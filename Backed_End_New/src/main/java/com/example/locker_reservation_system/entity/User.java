@@ -16,10 +16,15 @@ import com.example.locker_reservation_system.repository.LockerRepository;
 import com.example.locker_reservation_system.repository.ReservationRepository;
 import com.example.locker_reservation_system.repository.UserRepository;
 
-@Entity @Data @NoArgsConstructor
-public class User {
+@Entity
+@Data
+@NoArgsConstructor
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "user_type")
+public abstract class User {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
     @Column(nullable = false, unique = true)
@@ -27,7 +32,7 @@ public class User {
 
     @Column(name = "password", nullable = false)
     @JsonIgnore
-    private String encryptedPassword;            // 加密後
+    private String encryptedPassword; // 加密後
 
     @Column(nullable = false)
     private String phoneNumber;
@@ -53,8 +58,9 @@ public class User {
 
     /** 預約置物櫃 */
     public Reservation reserve(Locker locker, LocalDate start, LocalDate end) {
-        if (start.isAfter(end)) throw new IllegalArgumentException("start > end");
-        
+        if (start.isAfter(end))
+            throw new IllegalArgumentException("start > end");
+
         // 檢查置物櫃是否可用
         if (!locker.isAvailable(start, end)) {
             throw new RuntimeException("Locker already reserved in this period");
@@ -115,7 +121,8 @@ public class User {
                 .collect(Collectors.toList());
     }
 
-    public Reservation adminReserveLockerForUser(User targetUser, Locker locker, LocalDate startDate, LocalDate endDate) {
+    public Reservation adminReserveLockerForUser(User targetUser, Locker locker, LocalDate startDate,
+            LocalDate endDate) {
         if (!this.getIsAdmin()) {
             throw new RuntimeException("Only administrators can reserve lockers for other users.");
         }
@@ -149,6 +156,5 @@ public class User {
         targetUser.cancelReservation(reservation.getId());
         reservationRepo.delete(reservation); // Delete from the database
     }
-
 
 }
