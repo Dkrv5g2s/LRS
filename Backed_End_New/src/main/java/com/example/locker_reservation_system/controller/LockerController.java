@@ -12,10 +12,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@RestController @RequestMapping("/api/lockers")
+@RestController
+@RequestMapping("/api/lockers")
 public class LockerController {
 
-    @Autowired private LockerRepository lockerRepo;
+    @Autowired
+    private LockerRepository lockerRepo;
 
     /* ============ 新增 Locker ============ */
     @PostMapping
@@ -46,8 +48,8 @@ public class LockerController {
     @Transactional
     public Locker updateLocker(@PathVariable long id, @RequestBody LockerUpdateRequest req) {
         // 驗證日期範圍
-        if (req.getStartDate() != null && req.getEndDate() != null && 
-            req.getStartDate().isAfter(req.getEndDate())) {
+        if (req.getStartDate() != null && req.getEndDate() != null &&
+                req.getStartDate().isAfter(req.getEndDate())) {
             throw new IllegalArgumentException("Start date must be before or equal to end date");
         }
 
@@ -86,7 +88,7 @@ public class LockerController {
             @PathVariable long id,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        
+
         if (startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("Start date must be before or equal to end date");
         }
