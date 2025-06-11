@@ -32,7 +32,7 @@ public class Administrator extends User {
                 .collect(Collectors.toList());
     }
 
-    public Reservation adminReserveLockerForUser(User targetUser, Locker locker, LocalDate startDate,
+    public Reservation adminReserveLockerForUser(Customer targetUser, Locker locker, LocalDate startDate,
             LocalDate endDate) {
         if (!this.getIsAdmin()) {
             throw new RuntimeException("Only administrators can reserve lockers for other users.");
@@ -40,7 +40,7 @@ public class Administrator extends User {
         return targetUser.reserve(locker, startDate, endDate);
     }
 
-    public List<Reservation> adminGetReservationsForUser(User targetUser) {
+    public List<Reservation> adminGetReservationsForUser(Customer targetUser) {
         if (!this.getIsAdmin()) {
             throw new RuntimeException("Only administrators can view other users' reservations.");
         }
@@ -51,7 +51,7 @@ public class Administrator extends User {
         if (!this.getIsAdmin()) {
             throw new RuntimeException("Only administrators can update other users' reservations.");
         }
-        User targetUser = reservation.getUser();
+        Customer targetUser = reservation.getCustomer();
         return targetUser.updateReservationDates(reservation.getId(), newStart, newEnd);
     }
 
@@ -59,7 +59,7 @@ public class Administrator extends User {
         if (!this.getIsAdmin()) {
             throw new RuntimeException("Only administrators can cancel other users' reservations.");
         }
-        User targetUser = reservation.getUser();
+        Customer targetUser = reservation.getCustomer();
         targetUser.cancelReservation(reservation.getId());
         reservationRepo.delete(reservation);
     }

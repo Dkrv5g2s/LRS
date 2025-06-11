@@ -19,7 +19,7 @@ public class Reservation {
     private Locker locker;
 
     @ManyToOne @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private Customer customer;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @Column(name = "start_date")
@@ -34,9 +34,9 @@ public class Reservation {
     private String barcode;
 
     /* ====== 建構器供 Locker 呼叫 ====== */
-    public Reservation(Locker locker, User user, LocalDate start, LocalDate end) {
+    public Reservation(Locker locker, Customer customer, LocalDate start, LocalDate end) {
         this.locker = locker;
-        this.user = user;
+        this.customer = customer;
         this.startDate = start;
         this.endDate = end;
         regenerateBarcode();
@@ -48,12 +48,12 @@ public class Reservation {
     /** 取消預約 */
     public void cancel() {
         this.locker.release(this.startDate, this.endDate);
-        this.user.getReservations().remove(this);
+        this.customer.getReservations().remove(this);
     }
 
     /* 重新產生條碼 (給 reschedule 用) */
     public void regenerateBarcode() {
-        String raw = locker.getLockerId() + "-" + user.getUserId() + "-" + startDate + "-" + endDate + "-" + System.currentTimeMillis();
+        String raw = locker.getLockerId() + "-" + customer.getUserId() + "-" + startDate + "-" + endDate + "-" + System.currentTimeMillis();
         this.barcode = com.example.locker_reservation_system.util.BarcodeUtil.generateBase64(raw);
     }
 
@@ -83,7 +83,7 @@ public class Reservation {
         return "Reservation{" +
                 "id=" + id +
                 ", locker=" + locker +
-                ", user=" + user +
+                ", user=" + customer +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 ", barcode='" + barcode + '\'' +

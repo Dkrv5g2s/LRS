@@ -57,7 +57,11 @@ public class ReservationController {
         public List<Reservation> getByUser(@PathVariable Long userId) {
                 User user = userRepo.findById(userId)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
-                return user.getReservations();
+                if (!(user instanceof Customer)) {
+                        throw new RuntimeException("User is not a customer");
+                }
+                Customer customer = (Customer) user;
+                return customer.getReservations();
         }
 
         /* ===== 修改日期 ===== */
@@ -70,8 +74,8 @@ public class ReservationController {
                 Reservation reservation = reservationRepo.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-                User user = reservation.getUser(); // Get the user associated with the reservation
-                return user.updateReservationDates(id, newStart, newEnd); // Delegate to user's method
+                Customer customer = reservation.getCustomer(); // Get the user associated with the reservation
+                return customer.updateReservationDates(id, newStart, newEnd); // Delegate to user's method
         }
 
         /* ===== 取消 ===== */
@@ -80,8 +84,8 @@ public class ReservationController {
         public void cancel(@PathVariable Long id) {
                 Reservation reservation = reservationRepo.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
-                User user = reservation.getUser(); // Get the user associated with the reservation
-                user.cancelReservation(id); // Delegate to user's method
+                Customer customer = reservation.getCustomer(); // Get the user associated with the reservation
+                customer.cancelReservation(id); // Delegate to user's method
                 reservationRepo.delete(reservation); // Delete from the database
         }
 

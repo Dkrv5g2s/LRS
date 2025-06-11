@@ -5,6 +5,7 @@ import com.example.locker_reservation_system.entity.Locker;
 import com.example.locker_reservation_system.entity.Reservation;
 import com.example.locker_reservation_system.entity.User;
 import com.example.locker_reservation_system.entity.Administrator;
+import com.example.locker_reservation_system.entity.Customer;
 import com.example.locker_reservation_system.repository.LockerRepository;
 import com.example.locker_reservation_system.repository.ReservationRepository;
 import com.example.locker_reservation_system.repository.UserRepository;
@@ -50,8 +51,12 @@ public class ReservationManageController {
                 }
                 Administrator adminUser = (Administrator) user;
 
-                User targetUser = userRepo.findById(req.getUserId())
+                User target = userRepo.findById(req.getUserId())
                                 .orElseThrow(() -> new RuntimeException("Target User not found"));
+                if (!(target instanceof Customer)) {
+                        throw new RuntimeException("Target user is not a customer");
+                }
+                Customer targetUser = (Customer) target;
                 Locker locker = lockerRepo.findById(req.getLockerId())
                                 .orElseThrow(() -> new RuntimeException("Locker not found"));
 
@@ -72,8 +77,12 @@ public class ReservationManageController {
                 }
                 Administrator adminUser = (Administrator) user;
 
-                User targetUser = userRepo.findById(userId)
+                User target = userRepo.findById(userId)
                                 .orElseThrow(() -> new RuntimeException("Target User not found"));
+                if (!(target instanceof Customer)) {
+                        throw new RuntimeException("Target user is not a customer");
+                }
+                Customer targetUser = (Customer) target;
 
                 return adminUser.adminGetReservationsForUser(targetUser);
         }

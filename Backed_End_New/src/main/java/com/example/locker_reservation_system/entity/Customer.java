@@ -2,6 +2,8 @@ package com.example.locker_reservation_system.entity;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -9,6 +11,14 @@ import java.util.Optional;
 @Entity
 @DiscriminatorValue("CUSTOMER")
 public class Customer extends User {
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<Reservation> reservations = new java.util.ArrayList<>();
+
+    public java.util.List<Reservation> getReservations() {
+        return reservations;
+    }
 
     public Customer() {
         super();
@@ -40,7 +50,7 @@ public class Customer extends User {
 
         if (reservationOptional.isPresent()) {
             Reservation reservation = reservationOptional.get();
-            if (!reservation.getUser().getUserId().equals(this.getUserId())) {
+            if (!reservation.getCustomer().getUserId().equals(this.getUserId())) {
                 throw new RuntimeException("Reservation does not belong to this user.");
             }
             reservation.cancel();
@@ -58,7 +68,7 @@ public class Customer extends User {
 
         if (reservationOptional.isPresent()) {
             Reservation reservation = reservationOptional.get();
-            if (!reservation.getUser().getUserId().equals(this.getUserId())) {
+            if (!reservation.getCustomer().getUserId().equals(this.getUserId())) {
                 throw new RuntimeException("Reservation does not belong to this user.");
             }
             reservation.reschedule(newStart, newEnd);
