@@ -34,13 +34,4 @@ public class LockerDateDetail {
         }
     }
 
-    @Override
-    public String toString() {
-        return "LockerDateDetail{" +
-                "lockerDateDetailId=" + lockerDateDetailId +
-                ", date=" + date +
-                ", status='" + status + '\'' +
-                ", memo='" + memo + '\'' +
-                '}';
-    }
 }

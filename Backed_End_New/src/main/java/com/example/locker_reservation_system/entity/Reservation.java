@@ -78,15 +78,4 @@ public class Reservation {
         regenerateBarcode();
     }
 
-    @Override
-    public String toString() {
-        return "Reservation{" +
-                "id=" + id +
-                ", locker=" + locker +
-                ", user=" + user +
-                ", startDate=" + startDate +
-                ", endDate=" + endDate +
-                ", barcode='" + barcode + '\'' +
-                '}';
-    }
 }
