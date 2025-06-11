@@ -50,7 +50,7 @@ public class Locker {
 
     /** 取消某筆預約 (由 Reservation 呼叫) */
     public void release(LocalDate start, LocalDate end) {
-        markDateRange(start, end, "available");
+        markDateRangeStatus(start, end, "available");
     }
 
     /** 生成 LockerStatusResponse（for Controller） */
@@ -78,7 +78,7 @@ public class Locker {
 
     /* =========== 工具方法 =========== */
 
-    public void markDateRange(LocalDate start, LocalDate end, String status) {
+    public void markDateRangeStatus(LocalDate start, LocalDate end, String status) {
         generateDateStream(start, end).forEach(date -> {
             LockerDateDetail detail = dateDetails.stream()
                     .filter(d -> d.getDate().equals(date))
@@ -98,7 +98,36 @@ public class Locker {
         return start.datesUntil(end.plusDays(1));     // inclusive
     }
 
+    /** 更新日期範圍內的備註 */
+    public void updateDateRangeMemo(LocalDate start, LocalDate end, String memo) {
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("Start date must be before or equal to end date");
+        }
+        
+        generateDateStream(start, end).forEach(date -> {
+            LockerDateDetail detail = dateDetails.stream()
+                .filter(d -> d.getDate().equals(date))
+                .findFirst()
+                .orElseGet(() -> {
+                    LockerDateDetail newDetail = new LockerDateDetail();
+                    newDetail.setLocker(this);
+                    newDetail.setDate(date);
+                    newDetail.setStatus("available");
+                    dateDetails.add(newDetail);
+                    return newDetail;
+                });
+            detail.setMemo(memo);
+        });
+    }
 
+    /** 新增置物櫃 */
+    public void add(int capacity) {
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("Capacity must be greater than 0");
+        }
+        this.usability = true;
+        this.capacity = capacity;
+    }
 
     // entity/Locker.java  新增 / 修改片段
 

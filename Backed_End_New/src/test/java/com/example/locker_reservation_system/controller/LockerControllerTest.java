@@ -143,7 +143,7 @@ class LockerControllerTest {
     @Test
     void deleteLocker_hasReservations() {
         locker.setUsability(true);
-        locker.markDateRange(D1, D2, "occupied");
+        locker.markDateRangeStatus(D1, D2, "occupied");
         when(lockerRepo.findById(1L)).thenReturn(Optional.of(locker));
 
         assertThatThrownBy(() -> controller.deleteLocker(1L))

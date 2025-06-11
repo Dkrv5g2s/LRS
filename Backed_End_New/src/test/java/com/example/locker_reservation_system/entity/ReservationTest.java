@@ -77,7 +77,7 @@ public class ReservationTest {
         
         // 創建另一個預約並標記置物櫃的日期範圍
         Reservation anotherReservation = new Reservation(locker, user, newStartDate, newEndDate);
-        locker.markDateRange(newStartDate, newEndDate, "occupied");
+        locker.markDateRangeStatus(newStartDate, newEndDate, "occupied");
         user.getReservations().add(anotherReservation);
         
         // 嘗試重新預約到已被佔用的日期範圍

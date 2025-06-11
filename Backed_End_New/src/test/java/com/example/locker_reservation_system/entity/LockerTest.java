@@ -96,8 +96,8 @@ class LockerTest {
     }
 
     @Test
-    void testMarkDateRange() {
-        locker.markDateRange(D1, D2, "maintenance");
+    void testMarkDateRangeStatus() {
+        locker.markDateRangeStatus(D1, D2, "maintenance");
         assertThat(locker.getDateDetails())
                 .allMatch(d -> "maintenance".equals(d.getStatus()));
     }
@@ -113,7 +113,7 @@ class LockerTest {
         assertThat(response.getMemo()).isEmpty();
 
         // 添加備註後再次測試
-        locker.markDateRange(D1, D1, "maintenance");
+        locker.markDateRangeStatus(D1, D1, "maintenance");
         LockerDateDetail detail = locker.getDateDetails().get(0);
         detail.setMemo("維修中");
         
@@ -129,5 +129,53 @@ class LockerTest {
         assertThat(str).contains("site='" + locker.getSite() + "'");
         assertThat(str).contains("capacity=" + locker.getCapacity());
         assertThat(str).contains("usability=" + locker.getUsability());
+    }
+
+    @Test
+    void testAdd() {
+        locker = new Locker();
+        locker.setLockerId(1L);
+        locker.setSite("A");
+        
+        locker.add(2);
+        
+        assertThat(locker.getCapacity()).isEqualTo(2);
+        assertThat(locker.getUsability()).isTrue();
+    }
+
+    @Test
+    void testAdd_invalidCapacity() {
+        locker = new Locker();
+        locker.setLockerId(1L);
+        locker.setSite("A");
+        
+        assertThatThrownBy(() -> locker.add(0))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Capacity must be greater than 0");
+    }
+
+    @Test
+    void testAdd_negativeCapacity() {
+        locker = new Locker();
+        locker.setLockerId(1L);
+        locker.setSite("A");
+        
+        assertThatThrownBy(() -> locker.add(-1))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Capacity must be greater than 0");
+    }
+
+    @Test
+    void testAdd_alreadyInitialized() {
+        locker = new Locker();
+        locker.setLockerId(1L);
+        locker.setSite("A");
+        locker.setCapacity(1);
+        locker.setUsability(true);
+        
+        locker.add(2);
+        
+        assertThat(locker.getCapacity()).isEqualTo(2);
+        assertThat(locker.getUsability()).isTrue();
     }
 }

@@ -204,7 +204,7 @@ class ReservationControllerTest {
 
         // 創建另一個預約並標記置物櫃的日期範圍
         Reservation anotherReservation = new Reservation(l, u, newS, newE);
-        l.markDateRange(newS, newE, "occupied");
+        l.markDateRangeStatus(newS, newE, "occupied");
         u.getReservations().add(anotherReservation);
 
         assertThatThrownBy(() -> reservationController.updateReservationDates(10L, newS, newE))

@@ -7,7 +7,6 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity @Getter @Setter @NoArgsConstructor
 public class Reservation {
@@ -42,7 +41,7 @@ public class Reservation {
         this.endDate = end;
         regenerateBarcode();
         // 標記日期範圍
-        locker.markDateRange(start, end, "occupied");
+        locker.markDateRangeStatus(start, end, "occupied");
     }
 
     /* ====== 行為 ====== */
@@ -68,12 +67,12 @@ public class Reservation {
         // 檢查新區段是否可用
         if (!locker.isAvailable(newStart, newEnd)) {
             // 回滾原日期
-            locker.markDateRange(startDate, endDate, "occupied");
+            locker.markDateRangeStatus(startDate, endDate, "occupied");
             throw new RuntimeException("Locker already reserved in new period");
         }
 
         // 標記新區段並更新日期
-        locker.markDateRange(newStart, newEnd, "occupied");
+        locker.markDateRangeStatus(newStart, newEnd, "occupied");
         this.startDate = newStart;
         this.endDate = newEnd;
         regenerateBarcode();

@@ -36,8 +36,7 @@ public class LockerController {
         }
 
         // 設置 locker 為可用並更新容量
-        locker.setUsability(true);
-        locker.setCapacity(capacity);
+        locker.add(capacity);
 
         return lockerRepo.save(locker);
     }
@@ -73,15 +72,12 @@ public class LockerController {
             
             // 更新狀態
             if (req.getStatus() != null) {
-                locker.markDateRange(req.getStartDate(), req.getEndDate(), req.getStatus());
+                locker.markDateRangeStatus(req.getStartDate(), req.getEndDate(), req.getStatus());
             }
             
             // 更新備註
             if (req.getMemo() != null) {
-                locker.getDateDetails().stream()
-                    .filter(detail -> !detail.getDate().isBefore(req.getStartDate()) && 
-                                    !detail.getDate().isAfter(req.getEndDate()))
-                    .forEach(detail -> detail.setMemo(req.getMemo()));
+                locker.updateDateRangeMemo(req.getStartDate(), req.getEndDate(), req.getMemo());
             }
         }
 
